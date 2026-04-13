@@ -59,7 +59,7 @@ else:
             np.save(save_path, chip)
             print(f"Saved {chip.shape} array → {save_path}")
 
-            #field polygon into  224×224 boolean mask
+            #field polygon into  224 x 224 boolean mask
             geom = field.geometry()
             geom.transform(to_raster)
             wkt = geom.asWkt()

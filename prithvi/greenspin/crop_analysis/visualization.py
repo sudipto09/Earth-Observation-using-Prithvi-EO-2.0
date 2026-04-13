@@ -115,7 +115,7 @@ def _panel_pca_variance(ax, pca_model):
     ax.text(PCA_COMPONENT, 81, '80%', color='#f39c12', fontsize=7, ha='right')
     ax.set_xticks(components)
     total = pca_model.explained_variance_ratio_.cumsum()[-1] * 100
-    _style(ax, f'PCA variance explained ({total:.0f}% total)',
+    _style(ax, f'PCA variance',
            xlabel='Principal component', ylabel='Variance (%)')
     ax.legend(fontsize=7, facecolor=BG_PANEL, edgecolor='#444444', labelcolor=LABEL_COL)
 
