@@ -94,7 +94,7 @@ else:
 
             mask_path = os.path.join(OUTPUT_PATH, f"prithvi_mask_FID{field.id()}_{DATE_FOLDER}.npy")
             np.save(mask_path, mask)
-            print(f"Saved field mask {mask.shape} → {mask_path}")
+            print(f"Saved field mask {mask.shape} at {mask_path}")
 
             #save georef metadata 
             meta = {

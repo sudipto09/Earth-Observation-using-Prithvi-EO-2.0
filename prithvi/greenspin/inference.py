@@ -14,7 +14,7 @@ import json
 import os
 
 #config
-FIELD_ID= 1812
+FIELD_ID= 920
 DATE = '2024-05-13'
 OUTPUT_PATH= r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
 
@@ -59,7 +59,7 @@ ndvi_display = np.clip(ndvi, 0, 1)
 input_tensor = (
     torch.from_numpy(chip).float()
     .unsqueeze(0).unsqueeze(2)
-    .repeat(1, 1, TEMPORAL_REPEATS, 1, 1)   # → (1, 6, 4, 224, 224)
+    .repeat(1, 1, TEMPORAL_REPEATS, 1, 1)   # (1, 6, 4, 224, 224)
     .to(device)
 ) 
 
@@ -74,7 +74,7 @@ feature_map= np.linalg.norm(embeddings, axis=1).reshape(PATCH_GRID, PATCH_GRID)
 
 #pixel-level clustering inside field mask
 print("Clustering field pixels...")
-pixels  = chip.reshape(6, -1).T                  
+pixels= chip.reshape(6, -1).T                  
 field_pixels = pixels[mask_224.ravel() == 1]          # only field pixels
 print(f"Field pixels: {len(field_pixels)}")
 
