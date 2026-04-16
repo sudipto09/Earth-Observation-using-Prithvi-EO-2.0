@@ -18,11 +18,11 @@ from config import N_CLUSTERS, PCA_COMPONENT, CHIP_SIZE, RANDOM_SEED
 
 @dataclass
 class ClusterResult:
-    pixel_labels:   np.ndarray   # (N_field_pixels,)  int labels
-    confidence:  np.ndarray   # (N_field_pixels,)  max-prob per pixel
-    pixel_cluster_map: np.ndarray   # (CHIP_SIZE, CHIP_SIZE)  2 = outside field
-    confidence_map:   np.ndarray   # (CHIP_SIZE, CHIP_SIZE)  NaN outside field
-    field_pca:       np.ndarray   # (N_field_pixels, PCA_COMPONENT)
+    pixel_labels:   np.ndarray   
+    confidence:  np.ndarray   
+    pixel_cluster_map: np.ndarray   
+    confidence_map:   np.ndarray   
+    field_pca:       np.ndarray   
     pca_model:     PCA
     greener_idx:    int
     crop_names:     list[str]
@@ -52,7 +52,7 @@ def run_clustering(
     emb_norm   = StandardScaler().fit_transform(emb_pixels)
     spectral_norm = StandardScaler().fit_transform(spectral_pixels)
     
-    # --- spatial features ---
+    # spatial features 
     H, W = mask_224.shape
     ys, xs = np.meshgrid(np.arange(H), np.arange(W), indexing='ij')
 
@@ -101,9 +101,9 @@ def run_clustering(
             n_init=5,
             reg_covar=1e-3
         )
-    gmm.fit(field_pca)
-    pixel_labels = gmm.predict(field_pca)
-    confidence = gmm.predict_proba(field_pca).max(axis=1)
+        gmm.fit(field_pca)
+        pixel_labels = gmm.predict(field_pca)
+        confidence = gmm.predict_proba(field_pca).max(axis=1)
 
     # map back to 2D spatial grids
     pixel_cluster_map       = np.full(CHIP_SIZE * CHIP_SIZE, 2, dtype=int)
@@ -115,10 +115,17 @@ def run_clustering(
     confidence_map      = confidence_map.reshape(CHIP_SIZE, CHIP_SIZE)
     # per-cluster stats
     field_ndvi   = ndvi.ravel()[field_mask_flat]
-    cluster_counts = [int(np.sum(pixel_labels == i))      for i in range(N_CLUSTERS)]
-    cluster_ndvi_avg = [float(np.mean(field_ndvi[pixel_labels == i])) for i in range(N_CLUSTERS)]
-    cluster_conf_avg = [float(np.mean(confidence[pixel_labels == i])) for i in range(N_CLUSTERS)]
-    cluster_pct   = [c / len(pixel_labels) * 100        for c in cluster_counts]
+    n_actual     = len(np.unique(pixel_labels))           
+    cluster_counts   = [int(np.sum(pixel_labels == i))        for i in range(n_actual)]
+    cluster_ndvi_avg = [float(np.mean(field_ndvi[pixel_labels == i])) for i in range(n_actual)]
+    cluster_conf_avg = [float(np.mean(confidence[pixel_labels == i])) for i in range(n_actual)]
+    cluster_pct      = [c / len(pixel_labels) * 100            for c in cluster_counts]
+
+    # pad stats for missing clusters 
+    while len(cluster_counts)   < N_CLUSTERS: cluster_counts.append(0)
+    while len(cluster_ndvi_avg) < N_CLUSTERS: cluster_ndvi_avg.append(0.0)
+    while len(cluster_conf_avg) < N_CLUSTERS: cluster_conf_avg.append(0.0)
+    while len(cluster_pct)      < N_CLUSTERS: cluster_pct.append(0.0)
 
     # assign readable crop names
     greener_idx     = int(np.argmax(cluster_ndvi_avg))

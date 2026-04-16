@@ -48,7 +48,7 @@ def compute_indices(chip: np.ndarray) -> dict[str, np.ndarray]:
         'ndvi': (B8  - B4) / (B8  + B4  + 1e-6),          # vegetation greenness
         'ndwi': (B3  - B8) / (B3  + B8  + 1e-6),          # water content
         'savi': 1.5 * (B8 - B4) / (B8 + B4 + 0.5),        # soil-adjusted veg
-        'ndre': (B8  - B4) / (B8  + B4  + 1e-6),          # red edge
+        'ndre': (B8  - B3) / (B8  + B3  + 1e-6),          # red edge (B8-B3 proxy, B5 unavailable)
     }
 
 
@@ -62,4 +62,24 @@ def build_enriched_chip(chip: np.ndarray) -> np.ndarray:
     """
     indices = compute_indices(chip)
     extra   = np.stack(list(indices.values()), axis=0)  
-    return np.concatenate([chip, extra], axis=0)        
+    return np.concatenate([chip, extra], axis=0)
+
+
+#cloud and shadow detection
+
+def make_cloud_shadow_mask(chip: np.ndarray) -> np.ndarray:
+    """
+    
+    Uses percentile thresholds so it 
+    works whether the chip is in raw DN, 0-1 reflectance, or 0-10000 DN   
+    
+    mask   1 = (cloud / shadow),   0 = clear
+    """
+    B2  = chip[0]   # Blue
+    B8  = chip[3]   # NIR
+    B11 = chip[4]   # SWIR1
+
+    cloud  = B2  > np.percentile(B2,  95)
+    shadow = (B8 < np.percentile(B8,  20)) & (B11 < np.percentile(B11, 20))
+
+    return (cloud | shadow).astype(np.float32)

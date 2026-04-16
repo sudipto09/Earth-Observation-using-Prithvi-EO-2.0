@@ -11,6 +11,7 @@ from matplotlib.patches import Patch
 
 from clustering import ClusterResult
 from config import FIELD_ID, DATE, PATCH_GRID, PCA_COMPONENT, CHIP_SIZE
+from encoder import make_patch_mask
 from spectral import norm
 
 # colour scheme
@@ -82,22 +83,65 @@ def _panel_ndvi(fig, ax, ndvi_display, mask_224):
     _draw_field_boundary(ax, mask_224)            
 
 
-def _panel_feature_map(fig, ax, feature_map):
-    im = ax.imshow(feature_map, cmap='viridis', interpolation='nearest')
-    im.cmap.set_bad(color='#1a1a1a')
-    for x in range(PATCH_GRID + 1):
-        ax.axvline(x - 0.5, color='white', linewidth=0.3, alpha=0.4)
-        ax.axhline(x - 0.5, color='white', linewidth=0.3, alpha=0.4)
-
-    #zoom to field patches
-    valid_rows, valid_cols = np.where(~np.isnan(feature_map))
-    if valid_rows.size > 0:
-        pad = 2
-        ax.set_xlim(valid_cols.min() - pad - 0.5, valid_cols.max() + pad + 0.5)
-        ax.set_ylim(valid_rows.max() + pad + 0.5, valid_rows.min() - pad - 0.5)
+def _panel_feature_map(fig, ax, feature_map, mask_clean):
     
+    patch_mask = make_patch_mask(mask_clean)               # (14, 14) bool field patches only
+    valid_rows, valid_cols = np.where(patch_mask)
+    feature_map_display = np.where(patch_mask, feature_map, np.nan)
 
-    _style(ax, 'Encoder feature intensity (14 x 14)',
+    # normalise to [0,1] over valid field patches before plotting
+    fm = feature_map_display.copy()
+    fm = (fm - np.nanmin(fm)) / (np.nanmax(fm) - np.nanmin(fm) + 1e-9)
+    feature_map_display = fm
+
+    masked = np.ma.masked_invalid(feature_map_display)
+    im = ax.imshow(masked, cmap='viridis', interpolation='nearest')
+    im.cmap.set_bad(color='#1a1a1a')
+
+    # tight crop:  no background noise visible
+    if valid_rows.size > 0:
+        pad = 1
+        r0 = max(valid_rows.min() - pad, 0)
+        r1 = min(valid_rows.max() + pad, PATCH_GRID - 1)
+        c0 = max(valid_cols.min() - pad, 0)
+        c1 = min(valid_cols.max() + pad, PATCH_GRID - 1)
+        ax.set_xlim(c0 - 0.5, c1 + 0.5)
+        ax.set_ylim(r1 + 0.5, r0 - 0.5)
+        # grid lines drawn only inside the visible region
+        for x in range(c0, c1 + 2):
+            ax.axvline(x - 0.5, color='white', linewidth=0.3, alpha=0.4)
+        for y in range(r0, r1 + 2):
+            ax.axhline(y - 0.5, color='white', linewidth=0.3, alpha=0.4)
+
+    # gold border on every active field patch — makes field extent unambiguous
+    for r, c in zip(valid_rows, valid_cols):
+        ax.add_patch(plt.Rectangle(
+            (c - 0.5, r - 0.5), 1, 1,
+            linewidth=1.5, edgecolor='#FFD700', facecolor='none',
+        ))
+
+    # field patch count
+    ax.text(0.02, 0.98, f'Field: {patch_mask.sum()}/196 patches',
+            transform=ax.transAxes, color='#FFD700',
+            fontsize=7, va='top', fontstyle='italic')
+
+    # inset map showing field location within the 14x14 grid
+    axins = ax.inset_axes([0.67, 0.0, 0.33, 0.33])
+    ctx   = np.zeros((PATCH_GRID, PATCH_GRID))
+    ctx[patch_mask] = 1.0
+    axins.imshow(ctx, cmap='YlGn', vmin=0, vmax=1.2, interpolation='nearest')
+    axins.set_xticks([]); axins.set_yticks([])
+    axins.set_title('Field in grid', color=LABEL_COL, fontsize=5, pad=2)
+    for spine in axins.spines.values():
+        spine.set_edgecolor('#FFD700')
+    axins.set_facecolor(BG_PANEL)
+
+    ax.text(0.02, 0.02,
+        f"min={np.nanmin(feature_map_display):.2f} max={np.nanmax(feature_map_display):.2f}",
+        transform=ax.transAxes,
+        fontsize=7, color='white')
+    
+    _style(ax, 'Encoder feature intensity',
            xlabel='Patch column', ylabel='Patch row')
     cb = _colorbar(fig, im, ax)
     cb.set_label('L2 norm', color=LABEL_COL, fontsize=7)
@@ -153,21 +197,21 @@ def _panel_crop_map(ax, result: ClusterResult, mask_224):
     )
 
 
-def _panel_confidence(fig, ax, result: ClusterResult, mask_224):
-    conf_display = np.where(mask_224 == 1, result.confidence_map, np.nan)
+def _panel_confidence(fig, ax, result: ClusterResult, mask_224, mask_clean):
+    conf_display = np.where(mask_clean == 1, result.confidence_map, np.nan)  # clean pixels only
     im = ax.imshow(conf_display, cmap='RdYlGn', vmin=0.5, vmax=1.0, interpolation='nearest')
     _style(ax, 'GMM assignment confidence (0.5=uncertain, 1.0=certain)')
     ax.set_xticks([]); ax.set_yticks([])
-    rows, cols = np.where(mask_224 == 1)
+    rows, cols = np.where(mask_224 == 1)                   
     pad = 20
     ax.set_xlim(cols.min() - pad, cols.max() + pad)
     ax.set_ylim(rows.max() + pad, rows.min() - pad)
     _colorbar(fig, im, ax)
 
 
-def _panel_ndvi_scatter(ax, result: ClusterResult, ndvi, mask_224):
+def _panel_ndvi_scatter(ax, result: ClusterResult, ndvi, mask_224, mask_clean):
     gi     = result.greener_idx
-    field_ndvi  = ndvi.ravel()[mask_224.ravel() == 1]
+    field_ndvi  = ndvi.ravel()[mask_clean.ravel() == 1]    # must match result.pixel_labels length
     colours  = [COL_A if l == gi else COL_B for l in result.pixel_labels]
     jitter  = np.random.default_rng(42).uniform(-0.08, 0.08, size=len(result.pixel_labels))
     ax.scatter(result.pixel_labels + jitter, field_ndvi,
@@ -244,6 +288,7 @@ def build_dashboard(
     feature_map,
     chip, chip_enriched,
     mask_224,
+    mask_clean,
     emb_pixels,
     result: ClusterResult,
     device,
@@ -279,14 +324,15 @@ def build_dashboard(
     _panel_true_colour(panels[0], rgb, mask_224)       
     _panel_nir_false(panels[1], nir_false, mask_224)   
     _panel_ndvi(fig, panels[2], ndvi_display, mask_224) 
-    _panel_feature_map(fig, panels[3], feature_map)
+    panels[3]._cluster_overlay = result.pixel_cluster_map
+    _panel_feature_map(fig, panels[3], feature_map, mask_clean)
     _panel_pca_variance(panels[4], result.pca_model)
     _panel_pca_scatter(panels[5], result)
     _panel_crop_map(panels[6], result, mask_224)
-    _panel_confidence(fig, panels[7], result, mask_224)
-    _panel_ndvi_scatter(panels[8], result, ndvi, mask_224)
+    _panel_confidence(fig, panels[7], result, mask_224, mask_clean)
+    _panel_ndvi_scatter(panels[8], result, ndvi, mask_224, mask_clean)
     _panel_summary(panels[9], result)
-    _panel_pipeline(panels[10], chip, chip_enriched, mask_224, emb_pixels, device)
+    _panel_pipeline(panels[10], chip, chip_enriched, mask_clean, emb_pixels, device)
 
     plt.savefig(save_path, dpi=150, bbox_inches='tight', facecolor=BG_DARK)
     plt.close(fig)

@@ -64,11 +64,9 @@ def upsample_embeddings(embeddings: np.ndarray) -> np.ndarray:
 
 def make_patch_mask(mask_224: np.ndarray, threshold: float = 0.05) -> np.ndarray:
     """
-    Downsample the 224 x 224 binary field mask to a 14 x 14 patch-level boolean mask.
     A patch is considered 'field' if >= threshold fraction of its pixels are field.
-
-    threshold=0.3 means a patch needs at least 30% field coverage to be included
-    — useful for field edges where patches straddle the boundary.
+    a patch needs at least 30% field coverage to be included
+    
     """
     patch_size = CHIP_SIZE // PATCH_GRID      # 16 pixels per patch side
     patch_mask = np.zeros((PATCH_GRID, PATCH_GRID), dtype=bool)
@@ -84,6 +82,22 @@ def make_patch_mask(mask_224: np.ndarray, threshold: float = 0.05) -> np.ndarray
     return patch_mask
 
 
+def mask_patch_embeddings(
+    embeddings: np.ndarray,   # (196, D)
+    mask_224:  np.ndarray,   # (H, W)  binary float32
+    threshold: float = 0.05,
+) -> np.ndarray:
+    """
+    Zero-out patch embeddings whose footprint lies outside the field boundary.
+    
+    """
+    patch_mask = make_patch_mask(mask_224, threshold=threshold)   # (14, 14) bool
+    flat_mask  = patch_mask.ravel()                               # (196,)
+    masked     = embeddings.copy()
+    masked[~flat_mask] = 0.0
+    return masked                                                 # (196, D)
+
+
 def make_feature_map(
     embeddings: np.ndarray,
     mask_224: np.ndarray | None = None,
@@ -93,13 +107,16 @@ def make_feature_map(
     mode=l2  -> L2 norm of each patch embedding  (better for small fields)
     mode=pca -> first PCA component               (better when many patches)
     """
-    if mode == 'l2':
-        raw_map = np.linalg.norm(embeddings, axis=1).reshape(PATCH_GRID, PATCH_GRID)
+    if embeddings.ndim == 2:
+        if mode == 'l2':
+            raw_vals = np.linalg.norm(embeddings, axis=1)
+        elif mode == 'pca':
+            raw_vals = PCA(n_components=1).fit_transform(embeddings).reshape(-1)
+            raw_vals = np.abs(raw_vals)
     else:
-        raw_map = (
-            PCA(n_components=1).fit_transform(embeddings)
-            .reshape(PATCH_GRID, PATCH_GRID)
-        )
+        raw_vals = embeddings
+
+    raw_map = raw_vals.reshape(PATCH_GRID, PATCH_GRID)
 
     if mask_224 is None:
         return raw_map
@@ -107,4 +124,12 @@ def make_feature_map(
     patch_mask = make_patch_mask(mask_224)
     masked_map = raw_map.astype(float)
     masked_map[~patch_mask] = np.nan
+
+    if np.all(np.isnan(masked_map)):
+        return masked_map
+
+    lo = np.nanmin(masked_map)
+    hi = np.nanmax(masked_map)
+    masked_map = (masked_map - lo) / (hi - lo + 1e-9)
+
     return masked_map
