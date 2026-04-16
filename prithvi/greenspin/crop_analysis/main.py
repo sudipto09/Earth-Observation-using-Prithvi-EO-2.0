@@ -53,7 +53,8 @@ def main() -> None:
 
     feature_map = make_feature_map(embeddings, mask_224 = mask_224_clean, mode='l2')
     emb_pixels  = upsample_embeddings(embeddings)             # (H*W, 1024)
-
+    mask_flat = mask_224_clean.ravel() == 1
+    emb_pixels[~mask_flat] = 0
     #clustering
     result = run_clustering(
         emb_pixels  = emb_pixels,

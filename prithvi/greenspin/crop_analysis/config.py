@@ -5,7 +5,7 @@ config.py
 import os
 
 #field/date
-FIELD_ID  = 920
+FIELD_ID  = 587
 DATE      = '2024-07-14'
 
 

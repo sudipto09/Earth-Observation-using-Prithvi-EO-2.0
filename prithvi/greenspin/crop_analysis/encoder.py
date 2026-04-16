@@ -64,9 +64,7 @@ def upsample_embeddings(embeddings: np.ndarray) -> np.ndarray:
 
 def make_patch_mask(mask_224: np.ndarray, threshold: float = 0.05) -> np.ndarray:
     """
-    A patch is considered 'field' if >= threshold fraction of its pixels are field.
-    a patch needs at least 30% field coverage to be included
-    
+    A patch is considered 'field' if >= threshold fraction of its pixels are field.    
     """
     patch_size = CHIP_SIZE // PATCH_GRID      # 16 pixels per patch side
     patch_mask = np.zeros((PATCH_GRID, PATCH_GRID), dtype=bool)
@@ -79,7 +77,7 @@ def make_patch_mask(mask_224: np.ndarray, threshold: float = 0.05) -> np.ndarray
             ]
             patch_mask[r, c] = tile.mean() >= threshold
 
-    return patch_mask
+    return patch_mask 
 
 
 def mask_patch_embeddings(
