@@ -212,11 +212,11 @@ python main.py
 
 ##  Highlight of the project
 
-Use of **foundation models (Prithvi EO)**
-Combining **deep learning + classical ML (GMM, PCA)**
-Real-world **remote sensing pipeline**
-Strong **visual explainability**
-Export to **GIS-compatible formats**
+* Use of **foundation models (Prithvi EO)**
+* Combining **deep learning + classical ML (GMM, PCA)**
+* Real-world **remote sensing pipeline**
+* Strong **visual explainability**
+* Export to **GIS-compatible formats**
 
 ---
 
