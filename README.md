@@ -30,14 +30,12 @@ Then clusters field pixels into meaningful crop zones.
 
 ### Field Analysis Dashboard
 
-<img width="2162" height="1942" alt="prithvi_dashboard_v2_FID587_2024-07-14" src="https://github.com/user-attachments/assets/fffa7744-b322-461d-88fa-97bf410d4343" />
-<img width="2161" height="1942" alt="prithvi_dashboard_v2_FID920_2024-07-14" src="https://github.com/user-attachments/assets/78c14508-0b2b-4179-8bfe-3d3ed1e59295" />
 <img width="2162" height="1942" alt="prithvi_dashboard_v2_FID991_2024-07-14" src="https://github.com/user-attachments/assets/0605695a-91a5-4517-aa50-a149d579dac5" />
 
 
 
 
-Each dashboard shows:
+Dashboard shows:
 
 * RGB & NIR views
 * NDVI map
