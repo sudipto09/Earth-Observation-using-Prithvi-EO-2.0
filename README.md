@@ -26,23 +26,16 @@ Then clusters field pixels into meaningful crop zones.
 
 ---
 
-## 📸 Sample Outputs
+## Sample Outputs
 
 ### Field Analysis Dashboard
 
-![Image](https://images.openai.com/static-rsc-4/ywU-glNz8JKPKTu-NlHq4LOV6x9NrNuyLwt2eMWacxZwyxMhDMQ7tVzE7tmEsChM8WC6gwrbzPH5J3u9sxStk_Qw8rOnChv93gbUnqozZMlDYCJoKSGaPFdFlhkKQtceTO2V0Wa74411tUJa3gsNEuve4mpwCJttLXFWB_nKNeSNswUKPLN1mBy6nkXOtwOz?purpose=fullsize)
+<img width="2162" height="1942" alt="prithvi_dashboard_v2_FID587_2024-07-14" src="https://github.com/user-attachments/assets/fffa7744-b322-461d-88fa-97bf410d4343" />
+<img width="2161" height="1942" alt="prithvi_dashboard_v2_FID920_2024-07-14" src="https://github.com/user-attachments/assets/78c14508-0b2b-4179-8bfe-3d3ed1e59295" />
+<img width="2162" height="1942" alt="prithvi_dashboard_v2_FID991_2024-07-14" src="https://github.com/user-attachments/assets/0605695a-91a5-4517-aa50-a149d579dac5" />
 
-![Image](https://images.openai.com/static-rsc-4/HOwD3L5kShLQzmXJU8HRFpcaQkD9HJibUomEpjPgTatOV04P-qZr2-nXgLAMR4y4wp1mL1EIzlk0tECwWeH6owsYHoBxZ64vgpHPM2HTg35KDrGuMDJpecZ9hDIwUdl1Fh-G2VPafpc-r_dlPw2AiwXz6C5LuF_19UWbb148Jqytgv6M823n_4mhG1UfVT_a?purpose=fullsize)
 
-![Image](https://images.openai.com/static-rsc-4/Wo7ZZT1glk5csri8DFkPgHEGznwDcSjGsrGlDudIy1MLm9_d680z2KO-qghjAXasH-I7Irb8zARS9IpZp2ZScabVDZS9vPjSr94tHl1WKmsyqWcUOZCxjwJQ_dqNUCG_m8uyTlisZHZNTL0NhKZFMM9IjAYv-5qdb4OSswAWmj7HyTxQfaVlQxHRG0WVwWLy?purpose=fullsize)
 
-![Image](https://images.openai.com/static-rsc-4/MO7o1p5SiLzDLN0C7qlFb5ZLMjd0KNjwbs_SjF6MY-lB8c5DfR-zfi8hQa5DyuJrkXcrUDdscBEeslUPgsDczRAxYCCnI9cr9O04tsR1Jju6dYj5JjGTkXrp-KD3C4-EO8ViOdtqN8L1TUDyl_QzrD5iupNcxD4EsxhG4YmKAqPViBCrEb7j1cstYDA3ciSf?purpose=fullsize)
-
-![Image](https://images.openai.com/static-rsc-4/DZUkCt2oesW4qDGLZUzmZrESTb0et1nc4nzEay0UqUHkhaYfADhgLSkzdcczluKK8DQSUkdh2o6EARw6HWanHLKKfNaboq0FqmXgzNnMWt7DISVnPPg7bVXhSG5S2__iL8zkWqThGPw_937Vm7gOr_xsRSdqubi6ODohuYToaNpsaq1yT0AA4DTKqFV4Ujxi?purpose=fullsize)
-
-![Image](https://images.openai.com/static-rsc-4/D8X3UHQtWBflVwkURflYOYOjFywDn976kvrrXPapUkHhJNBXyNH0FgtFNLLeWPOxnjW3Umbj9Xb4ko00ffu793RJ-bB8oPhZWn2MVIZIwAHLYXlJ7x2CiV_S8CECedZtgf8selFXQ4iz8w3MIEyOAGokFRpW_hHxs3R5UG5_VcF4qJiLNmopZvrQpvv4RtVn?purpose=fullsize)
-
-![Image](https://images.openai.com/static-rsc-4/4rXoM8Pk5oWYsdza_MJWhCVR-YPP4K-9D9KXCBvuFapzVqgTEUAEUiR5MvhdUZsNFXjqr2tA30z3_asoMQuB2ayN-TKMgrOvgEX3junV6HtlegdjoLIuDBTXzDKN_AnZovKPvoOSXzVmFTHptNUKlGpWT4iARQjCMnpKTP7KYtQvNEsr3J8k495hugwbiLvL?purpose=fullsize)
 
 Each dashboard shows:
 
@@ -116,7 +109,7 @@ Dashboard + GeoTIFF Export
   * SAVI (soil-adjusted vegetation)
   * NDRE (red-edge proxy)
 
-👉 Implemented in: 
+
 
 ---
 
@@ -192,8 +185,6 @@ Example metrics:
 
 Edit parameters in:
 
-👉 
-
 ```python
 FIELD_ID = 920
 DATE = '2024-07-14'
@@ -249,7 +240,9 @@ Export to **GIS-compatible formats**
 ## Author
 
 **Sudipto Chakraborty**
+
 MSc Aerospace Informatics
+
 University of Würzburg
 
 ---
