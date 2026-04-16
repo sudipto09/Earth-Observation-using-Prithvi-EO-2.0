@@ -51,9 +51,20 @@ def run_clustering(
     # normalise
     emb_norm   = StandardScaler().fit_transform(emb_pixels)
     spectral_norm = StandardScaler().fit_transform(spectral_pixels)
+    
+    # --- spatial features ---
+    H, W = mask_224.shape
+    ys, xs = np.meshgrid(np.arange(H), np.arange(W), indexing='ij')
+
+    coords = np.stack([xs.ravel(), ys.ravel()], axis=1)
+    coords_norm = StandardScaler().fit_transform(coords)
+
+    # control influence
+    SPATIAL_WEIGHT = 0.5
+    coords_norm *= SPATIAL_WEIGHT
 
     # combine and mask to field pixels only
-    combined     = np.concatenate([emb_norm, spectral_norm], axis=1)
+    combined = np.concatenate([emb_norm, spectral_norm, coords_norm], axis=1)
     field_mask_flat  = mask_224.ravel() == 1
     field_combined   = combined[field_mask_flat]
 

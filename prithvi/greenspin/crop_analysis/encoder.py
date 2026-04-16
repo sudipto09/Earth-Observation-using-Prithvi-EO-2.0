@@ -13,8 +13,8 @@ from config import TEMPORAL_REPEATS, PATCH_GRID, CHIP_SIZE
 
 def build_input_tensor(chip: np.ndarray, device: torch.device) -> torch.Tensor:
     """
-    Convert raw chip (C, H, W) to Prithvi input tensor of shape (1, C, T, H, W).
-    Repeats the chip across T time steps and moves to device.
+    Convert raw chip (C, H, W) to Prithvi input tensor of shape (1, C, T, H, W). 
+    Repeats the chip across T time steps and moves to device.    
     """
     return (
         torch.from_numpy(chip).float()

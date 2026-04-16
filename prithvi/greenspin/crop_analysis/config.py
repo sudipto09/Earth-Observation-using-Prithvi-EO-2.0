@@ -6,7 +6,7 @@ import os
 
 #field/date
 FIELD_ID  = 920
-DATE      = '2024-05-13'
+DATE      = '2024-07-14'
 
 
 OUTPUT_PATH = r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
