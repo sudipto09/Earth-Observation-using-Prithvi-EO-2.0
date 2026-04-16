@@ -1,6 +1,6 @@
 """
 encoder.py
-----------
+
 Contains functions to build the Prithvi input tensor, extract patch tokens, upsample to pixel-level embeddings, and create a PCA-based feature map for visualisation.
 """
 import numpy as np

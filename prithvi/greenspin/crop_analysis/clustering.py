@@ -1,6 +1,6 @@
 """
 clustering.py
--------------
+
 Implements the clustering pipeline: normalisation, masking, PCA, GMM clustering, and computation of cluster statistics.
 Defines a ClusterResult dataclass to hold all outputs and metrics from the clustering process.
 """

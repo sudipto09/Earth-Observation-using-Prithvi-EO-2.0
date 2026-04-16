@@ -1,6 +1,6 @@
 """
 visualization.py
-----------------
+
 Contains functions to build a comprehensive dashboard visualising the Prithvi input data, encoder feature map, PCA space, GMM clustering results, and summary statistics.
 """
 import numpy as np

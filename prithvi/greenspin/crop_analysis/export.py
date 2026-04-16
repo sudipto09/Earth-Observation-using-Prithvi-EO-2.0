@@ -1,6 +1,6 @@
 """
 export.py
----------
+
 Writes the cluster map and confidence raster as a two-band GeoTIFF.
 """
 import numpy as np
@@ -19,7 +19,7 @@ def save_geotiff(result: ClusterResult, meta: dict, save_path: str) -> None:
         Band 2 - per-pixel GMM confidence 
 
     Parameters
-    ----------
+    
     result  : ClusterResult from clustering.run_clustering()
     meta   : geo-metadata dict loaded from the JSON sidecar
     save_path: destination .tif path
