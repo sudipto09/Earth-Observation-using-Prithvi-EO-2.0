@@ -232,6 +232,7 @@ Export to **GIS-compatible formats**
 
 * IBM & NASA – Prithvi EO 2.0
 * Open-source geospatial ML ecosystem
+* Greenspin GmbH (Würzburg) for providing data, infrastructure, and domain context
 
 ---
 
