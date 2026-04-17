@@ -179,7 +179,11 @@ def _panel_pca_scatter(ax, result: ClusterResult):
 
 
 def _panel_crop_map(ax, result: ClusterResult, mask_224):
-    cmap = ListedColormap([COL_A, COL_B, BG_PANEL])
+    gi   = result.greener_idx  
+    _clr = [BG_PANEL] * 3
+    _clr[gi]   = COL_A
+    _clr[1-gi] = COL_B
+    cmap = ListedColormap(_clr)
     ax.imshow(result.pixel_cluster_map, cmap=cmap, interpolation='nearest', vmin=0, vmax=2)
     _style(ax, 'Crop zone map (GMM, Prithvi + spectral)')
     ax.set_xticks([]); ax.set_yticks([])
@@ -187,7 +191,6 @@ def _panel_crop_map(ax, result: ClusterResult, mask_224):
     pad = 20
     ax.set_xlim(cols.min() - pad, cols.max() + pad)
     ax.set_ylim(rows.max() + pad, rows.min() - pad)
-    gi = result.greener_idx
     ax.legend(
         handles=[Patch(facecolor=COL_A, label=result.crop_names[gi]),
                  Patch(facecolor=COL_B, label=result.crop_names[1-gi]),
@@ -219,7 +222,8 @@ def _panel_ndvi_scatter(ax, result: ClusterResult, ndvi, mask_224, mask_clean):
     ax.set_xticks([0, 1])
     ax.set_xticklabels(['Cluster 0', 'Cluster 1'], color=LABEL_COL, fontsize=8)
     ax.set_xlim(-0.5, 1.5); ax.set_ylim(0, 1)
-    for i, color in enumerate([COL_A, COL_B]):
+    for i in range(2):
+        color    = COL_A if i == gi else COL_B
         mean_val = result.cluster_ndvi_avg[i]
         ax.axhline(mean_val, xmin=i*0.5+0.05, xmax=i*0.5+0.45,
                    color=color, linewidth=2, linestyle='--')
@@ -238,7 +242,8 @@ def _panel_summary(ax, result: ClusterResult):
     ax.set_title('Summary', color=TITLE_COL, fontsize=10, pad=6)
 
     left = 0.05
-    for i, color in enumerate([COL_A, COL_B]):
+    for i in range(2):
+        color = COL_A if i == result.greener_idx else COL_B
         width = (result.cluster_pct[i] / 100) * 0.9
         ax.barh(0.70, width, left=left, height=0.20, color=color, alpha=0.85)
         ax.text(left + width/2, 0.70, f'{result.cluster_pct[i]:.0f}%',
