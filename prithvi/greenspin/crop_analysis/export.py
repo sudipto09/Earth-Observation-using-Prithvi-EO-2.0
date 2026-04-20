@@ -7,7 +7,6 @@ import numpy as np
 import rasterio
 from rasterio.crs import CRS
 from rasterio.transform import from_origin
-
 from config import CHIP_SIZE
 from clustering import ClusterResult
 
@@ -15,14 +14,10 @@ from clustering import ClusterResult
 def save_geotiff(result: ClusterResult, meta: dict, save_path: str) -> None:
     """
     Write a two-band GeoTIFF:
-        Band 1 - integer cluster labels  
-        Band 2 - per-pixel GMM confidence 
+        Band 1 - integer cluster labels
+        Band 2 - per-pixel GMM confidence
 
-    Parameters
-    
-    result  : ClusterResult from clustering.run_clustering()
-    meta   : geo-metadata dict loaded from the JSON sidecar
-    save_path: destination .tif path
+   
     """
     gt  = meta['source_gt']
     x1  = meta['x1_px']
@@ -41,7 +36,7 @@ def save_geotiff(result: ClusterResult, meta: dict, save_path: str) -> None:
         height  = CHIP_SIZE,
         width  = CHIP_SIZE,
         count  = 2,
-        dtype  = 'float32',
+        dtype   = 'float32',
         crs     = CRS.from_wkt(meta['crs_wkt']),
         transform = geo_transform,
     ) as dst:

@@ -5,7 +5,7 @@ import json
 import os
 #config
 DATE_FOLDER  = '2024-07-14'
-PATCH_ID = '32UPA_0_4'
+PATCH_ID = '32UNA_3_4'
 BASE_PATH = r'Y:\14_Zuckerrübe\Sentinel_2\wue'
 OUTPUT_PATH= r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
 # B2 (Blue), B3 (Green), B4 (Red), B8 (NIR), B11 (SWIR1), B12 (SWIR2)
