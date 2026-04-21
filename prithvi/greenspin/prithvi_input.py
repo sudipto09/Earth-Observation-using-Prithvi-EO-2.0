@@ -4,7 +4,7 @@ from osgeo import gdal, ogr, osr
 import json
 import os
 #config
-DATE_FOLDER  = '2024-07-14'
+DATE_FOLDER  = '2024-09-15'
 PATCH_ID = '32UNA_3_4'
 BASE_PATH = r'Y:\14_Zuckerrübe\Sentinel_2\wue'
 OUTPUT_PATH= r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
