@@ -5,7 +5,7 @@ import os
 import glob
 
 
-FIELD_ID    = 991
+FIELD_ID    = 2701
 OUTPUT_PATH = r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
 FIELD_FOLDER = os.path.join(OUTPUT_PATH, f'FID_{FIELD_ID}')
 
@@ -79,3 +79,7 @@ MEANINGFUL_NDVI_SPREAD = 0.05
 MIN_VALID_PATCHES      = 10
 RANDOM_SEED            = 42
 PCA_COMPONENT          = 10
+
+TEMPORAL_STAT_WEIGHT   = 1.5   
+DISPLAY_MIN_VALID_PCT  = 0.70  
+EMB_STAT_PCA_DIMS      = 16    

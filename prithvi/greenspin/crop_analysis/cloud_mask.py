@@ -9,7 +9,7 @@ _SCL_DARK_AREA_CLASS = 2
 
 
 def make_scl_mask(scl: np.ndarray, include_dark_area: bool = True) -> np.ndarray:
-    bad= np.zeros(scl.shape, dtype=bool)
+    bad = np.zeros(scl.shape, dtype=bool)
     for cls in _SCL_BAD_CLASSES:
         bad |= (scl == cls)
     if include_dark_area:
@@ -18,11 +18,11 @@ def make_scl_mask(scl: np.ndarray, include_dark_area: bool = True) -> np.ndarray
 
 
 def make_spectral_mask(chip: np.ndarray) -> np.ndarray:
-    B2 = chip[0].astype(np.float32)
-    B4  = chip[2].astype(np.float32)
-    B8 = chip[3].astype(np.float32)
-    B11 = chip[4].astype(np.float32)
-    scale= 10_000.0 if chip.max() > 10.0 else 1.0
+    B2= chip[0].astype(np.float32)
+    B4= chip[2].astype(np.float32)
+    B8= chip[3].astype(np.float32)
+    B11= chip[4].astype(np.float32)
+    scale = 10_000.0 if chip.max() > 10.0 else 1.0
     ndvi = (B8 - B4) / (B8 + B4 + 1e-6)
     vegetation = ndvi > 0.3
     cloud = (
@@ -50,7 +50,7 @@ def make_combined_cloud_mask(
     scl_mask = make_scl_mask(scl, include_dark_area=include_dark_area)
     if not use_spectral_supplement:
         return scl_mask
-    spectral_on_clear= make_spectral_mask(chip) * (1.0 - scl_mask)
+    spectral_on_clear =make_spectral_mask(chip) * (1.0 - scl_mask)
     return np.clip(scl_mask + spectral_on_clear, 0.0, 1.0).astype(np.float32)
 
 

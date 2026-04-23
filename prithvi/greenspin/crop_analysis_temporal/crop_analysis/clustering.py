@@ -4,11 +4,13 @@ clustering.py
 from dataclasses import dataclass, field
 import numpy as np
 from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 
 from config import (
     MAX_CLUSTERS, MIN_CLUSTERS, PCA_COMPONENT, RANDOM_SEED,
+    TEMPORAL_STAT_WEIGHT,
 )
 
 
@@ -31,10 +33,10 @@ class ClusterResult:
     bic_n_range: list[int]
     bic_scores:list[float]
     
-    greener_idx:int                   # index of the highest-NDVI cluster
+    greener_idx:int                   # index of the highest-NDVI phenotype
     crop_names: list[str]
 
-    # per cluster stats
+    # per phenotype stats
     cluster_counts: list[int]
     cluster_ndvi_avg: list[float]
     cluster_ndvi_std:list[float]
@@ -46,7 +48,10 @@ class ClusterResult:
     ndvi_diff:float
     verdict:str
 
-   
+    # cluster quality metrics
+    silhouette: float = 0.0          
+    db_score: float = 0.0         
+
     temporal_dates: list[str] = field(default_factory=list)
     n_dates:    int       = 0
 
@@ -87,6 +92,7 @@ def run_clustering(
     mask_224:  np.ndarray,
     ndvi:   np.ndarray,
     n_field_patches: int = 196,
+    temporal_stats: np.ndarray | None = None,
 ) -> ClusterResult:
     
     H, W = mask_224.shape
@@ -112,7 +118,13 @@ def run_clustering(
     coords = np.stack([xs.ravel(), ys.ravel()], axis=1)
     coords_norm = StandardScaler().fit_transform(coords) * 0.5
 
-    combined= np.concatenate([emb_norm, spectral_norm, coords_norm], axis=1)
+    # (NDVI trajectory + embedding variability) 
+    if temporal_stats is not None:
+        ts_norm = StandardScaler().fit_transform(temporal_stats) * TEMPORAL_STAT_WEIGHT
+        combined = np.concatenate([emb_norm, ts_norm, spectral_norm, coords_norm], axis=1)
+    else:
+        combined = np.concatenate([emb_norm, spectral_norm, coords_norm], axis=1)
+
     field_mask_flat = mask_224.ravel() > 0
     field_combined = combined[field_mask_flat]
     n_samples = field_combined.shape[0]
@@ -210,7 +222,20 @@ def run_clustering(
         cluster_pct    = [100.0]
         ndvi_diff   = 0.0
 
-    #zone naming by NDVI rank
+    #cluster quality validation
+    if optimal_n > 1 and n_samples > optimal_n:
+        
+        sample_size = min(5000, n_samples)
+        sil = float(silhouette_score(
+            field_pca, pixel_labels,
+            sample_size=sample_size, random_state=RANDOM_SEED,
+        ))
+        db=float(davies_bouldin_score(field_pca, pixel_labels))
+    else:
+        sil = 1.0    
+        db  = 0.0
+
+    #phenotype naming by NDVI rank
     ndvi_order = list(np.argsort(cluster_ndvi_avg)[::-1])    # 0 = highest NDVI
     greener_idx = int(ndvi_order[0])
 
@@ -236,44 +261,44 @@ def run_clustering(
         ndvi_val = cluster_ndvi_avg[cidx]
         short = _ndvi_label(ndvi_val)
         if optimal_n == 1:
-            crop_names[cidx] =f'Zone 1 ({short})'
+            crop_names[cidx] = f'Phenotype 1 ({short})'
         elif rank == 0:
-            crop_names[cidx] = f'Zone {rank + 1} : high NDVI ({short})'
+            crop_names[cidx] = f'Phenotype {rank + 1} : high NDVI ({short})'
         elif rank == optimal_n - 1:
-            crop_names[cidx] = f'Zone {rank + 1} : low NDVI ({short})'
+            crop_names[cidx] = f'Phenotype {rank + 1} : low NDVI ({short})'
         elif texture_driven:
            
-            crop_names[cidx] = f'Zone {rank + 1} (texture-{rank + 1})'
+            crop_names[cidx] = f'Phenotype {rank + 1} (temporal-{rank + 1})'
         else:
-            crop_names[cidx] = f'Zone {rank + 1} ({short})'
+            crop_names[cidx] = f'Phenotype {rank + 1} ({short})'
 
     #summary
     avg_conf= float(np.mean(confidence))
 
     if optimal_n == 1:
-        verdict = 'Single homogeneous zone : no significant crop separation detected.'
+        verdict = 'Single homogeneous phenotype : no significant temporal separation detected.'
     elif ndvi_diff > 0.15:
         verdict = (
-            f'{optimal_n} distinct zones | strong NDVI separation '
+            f'{optimal_n} distinct phenotypes | strong NDVI separation '
             f'(spread {ndvi_diff:.3f}) | likely distinct crop types or strong stress.'
         )
     elif ndvi_diff > 0.05:
         if texture_driven:
             
             verdict = (
-                f'{optimal_n} zones | texture-driven separation '
+                f'{optimal_n} phenotypes | temporally-driven separation '
                 f'(NDVI spread {ndvi_diff:.3f}, dominant class: {dominant_label}) | '
-                f'similar greenness but different canopy structure or soil pattern.'
+                f'similar greenness but different seasonal trajectories.'
             )
         else:
             verdict = (
-                f'{optimal_n} zones | moderate NDVI separation '
+                f'{optimal_n} phenotypes | moderate NDVI separation '
                 f'(spread {ndvi_diff:.3f}) | possible mixed crop types or stress patches.'
             )
     else:
         verdict = (
-            f'{optimal_n} weakly-separated zones '
-            f'(NDVI spread {ndvi_diff:.3f}) | micro-variability or soil texture pattern.'
+            f'{optimal_n} weakly-separated phenotypes '
+            f'(NDVI spread {ndvi_diff:.3f}) | micro-variability or temporal trajectory pattern.'
         )
 
     return ClusterResult(
@@ -296,4 +321,6 @@ def run_clustering(
         avg_confidence  = avg_conf,
         ndvi_diff  =  ndvi_diff,
         verdict  = verdict,
+        silhouette  = sil,
+        db_score   = db,
     )

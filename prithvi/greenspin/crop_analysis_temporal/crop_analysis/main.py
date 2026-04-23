@@ -10,6 +10,8 @@ from data_loader import load_temporal_chips, load_mask, load_meta, load_scl_chip
 from encoder import (
     build_input_tensor,
     extract_patch_tokens,
+    average_patch_tokens,
+    extract_temporal_emb_stats,
     make_feature_map,
     mask_patch_embeddings,
     upsample_embeddings,
@@ -22,6 +24,8 @@ from spectral import (
     make_nir_false,
     make_rgb,
     make_temporal_composite,
+    select_best_clear_date,
+    extract_temporal_ndvi_stats,
 )
 from visualization import build_dashboard
 from cloud_mask import make_combined_cloud_mask, scl_coverage_report
@@ -102,9 +106,26 @@ def main() -> None:
         else:
             print(f"    {d}  ALL CLOUDY - excluded ")
 
-    # Composite chip using top-N greenest pixels per location
-    chip = make_temporal_composite(
-        chip_temporal, cloud_masks, top_n_greenest=5)  
+    # Select best single clear date 
+    display_t, display_date_str, display_valid_pct = select_best_clear_date(
+        chip_temporal = chip_temporal,
+        cloud_masks  = cloud_masks,
+        mask_224  = mask_224,
+        used_dates  = used_dates,
+        min_valid_pct  = config.DISPLAY_MIN_VALID_PCT,
+    )
+    print(f'\n  Display date: {display_date_str}  '
+          f'(field coverage: {display_valid_pct * 100:.1f}% clean)')
+
+    # use the best single clear date
+    chip_display  = chip_temporal[display_t]
+    rgb  = make_rgb(chip_display)
+    nir_false  = make_nir_false(chip_display)
+    ndvi_display_single = np.clip(compute_ndvi(chip_display), 0, 1)
+
+    # Temporal composite chip
+    chip_composite = make_temporal_composite(
+        chip_temporal, cloud_masks, top_n_greenest=5)
 
     # Remove field pixels that are cloudy in every single date
     all_cloudy= (cloud_masks.sum(axis=0) == len(used_dates)).astype(np.float32)
@@ -120,62 +141,91 @@ def main() -> None:
             
         )
 
-    #spectral indices and enriched chip for dashboard and clustering
-    rgb = make_rgb(chip)
-    nir_false  = make_nir_false(chip)
-    ndvi   = compute_ndvi(chip)
-    ndvi_display= np.clip(ndvi, 0, 1)
-    chip_enriched = build_enriched_chip(chip)   
+    # enriched composite chip 
+    chip_enriched = build_enriched_chip(chip_composite)
 
-    #composite NDVI over field
-    field_ndvi = float(np.mean(ndvi[mask_224_clean == 1])) if n_clean > 0 else 0.0
-    print(f'  Composite NDVI over field: {field_ndvi:.3f}')
+    # composite NDVI 
+    ndvi_composite = compute_ndvi(chip_composite)
+    field_ndvi_comp = float(np.mean(ndvi_composite[mask_224_clean == 1])) if n_clean > 0 else 0.0
+    print(f'  Composite NDVI over field: {field_ndvi_comp:.3f}')
 
-    #prithvi encoder
-    input_tensor= build_input_tensor(chip_temporal, device)
-    embeddings= extract_patch_tokens(model, input_tensor)
+    # temporal NDVI statistics per pixel (7 features: mean, peak, min, std, timing, rates)
+    print('  Extracting temporal NDVI statistics...')
+    temporal_ndvi_stats = extract_temporal_ndvi_stats(
+        chip_temporal = chip_temporal,
+        cloud_masks   = cloud_masks,
+        mask_224      = mask_224_clean,
+    )   
 
-    embeddings= mask_patch_embeddings(embeddings, mask_224_clean, chip=chip)
-    feature_map = make_feature_map(embeddings, mask_224=mask_224_clean, mode='l2')
+    #prithvi encoder 
+    input_tensor  = build_input_tensor(chip_temporal, device)
+    patch_tokens_temporal = extract_patch_tokens(model, input_tensor)  
+
+    # averaged tokens 
+    emb_avg = average_patch_tokens(patch_tokens_temporal)              
+    emb_avg = mask_patch_embeddings(emb_avg, mask_224_clean, chip=chip_composite)
+    feature_map = make_feature_map(emb_avg, mask_224=mask_224_clean, mode='l2')
 
     n_field_patches=int(np.sum(~np.isnan(feature_map)))
     if n_field_patches < config.MIN_VALID_PATCHES:
         print(f"  Only {n_field_patches} Prithvi patches cover "
               f"Field {config.FIELD_ID}.")
 
-    emb_pixels= upsample_embeddings(embeddings)
-    mask_flat= mask_224_clean.ravel() == 1
-    emb_pixels[~mask_flat] = 0.0
+    # per-date temporal embedding statistics 
+    print('  Extracting temporal embedding statistics...')
+    emb_temporal_stats = extract_temporal_emb_stats(
+        patch_tokens_temporal,
+        n_pca_dims = config.EMB_STAT_PCA_DIMS,
+    )   
+    
+    emb_pixels   = upsample_embeddings(emb_avg)          
+    emb_temporal_pixels = upsample_embeddings(emb_temporal_stats) 
 
-    #bic clustering 
+    mask_flat = mask_224_clean.ravel() == 1
+    emb_pixels[~mask_flat]   = 0.0
+    emb_temporal_pixels[~mask_flat] = 0.0
+    temporal_ndvi_stats[~mask_flat] = 0.0
+
+    # fused temporal feature matrix 
+    temporal_stats = np.concatenate(
+        [emb_temporal_pixels, temporal_ndvi_stats], axis=1
+    )   
+
+    #bic clustering
     result = run_clustering(
         emb_pixels  = emb_pixels,
-        chip_enriched    = chip_enriched,
-        mask_224  = mask_224_clean,
-        ndvi   = ndvi,
-        n_field_patches  = n_field_patches,
+        chip_enriched  = chip_enriched,
+        mask_224    = mask_224_clean,
+        ndvi      = ndvi_composite,
+        n_field_patches = n_field_patches,
+        temporal_stats  = temporal_stats,
     )
-    print(f'\n  BIC-optimal zones: {result.optimal_n}  '
+    print(f'\n  BIC-optimal phenotypes: {result.optimal_n}  '
           f'|  BIC scores: {[f"{s:.0f}" for s in result.bic_scores]}')
+    print(f'  Silhouette: {result.silhouette:.3f}  '
+          f'|  Davies-Bouldin: {result.db_score:.3f}')
 
     result.temporal_dates = used_dates
     result.n_dates   = len(used_dates)
 
     #dashboard
     build_dashboard(
-        rgb    = rgb,
-        nir_false   = nir_false,
-        ndvi_display = ndvi_display,
-        ndvi    = ndvi,
-        feature_map = feature_map,
-        chip   = chip,
-        chip_enriched= chip_enriched,
+        rgb      = rgb,
+        nir_false  = nir_false,
+        ndvi_display  = ndvi_display_single,
+        ndvi   = ndvi_composite,
+        feature_map   = feature_map,
+        chip     = chip_composite,
+        chip_enriched = chip_enriched,
         mask_224  = mask_224,
-        mask_clean = mask_224_clean,
+        mask_clean  = mask_224_clean,
         emb_pixels  = emb_pixels,
-        result   = result,
-        device  = device,
-        meta  = meta,
+        result  = result,
+        device = device,
+        meta    = meta,
+        display_date  = display_date_str,
+        chip_temporal = chip_temporal,
+        cloud_masks  = cloud_masks,
         save_path  = config.dashboard_path(),
     )
 

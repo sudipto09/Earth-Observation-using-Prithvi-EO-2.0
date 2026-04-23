@@ -1,7 +1,7 @@
 """
 visualization.py
 
-Builds a 4-row analysis dashboard for the Prithvi crop-zone pipeline.
+Builds a 5-row analysis dashboard for the Prithvi crop-zone pipeline.
 
 """
 import numpy as np
@@ -16,16 +16,15 @@ from encoder import make_patch_mask
 
 
 
-
 CLUSTER_PALETTE = [
-    '#27ae60',   # zone 0   green  
-    '#e74c3c',   # zone 1   red
-    '#3498db',   # zone 2   blue
-    '#f1c40f',   # zone 3   yellow
-    '#9b59b6',   # zone 4   purple
-    '#1abc9c',   # zone 5   teal
-    '#e67e22',   # zone 6   orange
-    '#ec407a',   # zone 7   pink
+    '#27ae60',   # phenotype 0   
+    '#e74c3c',   # phenotype 1   
+    '#3498db',   # phenotype 2   
+    '#f1c40f',   # phenotype 3  
+    '#9b59b6',   # phenotype 4   
+    '#1abc9c',   # phenotype 5  
+    '#e67e22',   # phenotype 6   
+    '#ec407a',   # phenotype 7   
 ]
 
 BG_DARK   = '#0d0d0d'
@@ -98,24 +97,27 @@ def _field_zoom(ax, mask_224: np.ndarray, pad: int = 22):
 
 #row 0
 
-def _panel_true_colour(ax, rgb, mask_224):
+def _panel_true_colour(ax, rgb, mask_224, display_date: str = ''):
     ax.imshow(rgb)
     ax.set_xticks([]); ax.set_yticks([])
-    _style(ax, 'True Colour  (B4 - B3 - B2)')           
+    subtitle = f'Date: {display_date}' if display_date else ''
+    _style(ax, 'True Colour  (B4 - B3 - B2)', subtitle=subtitle)           
     _draw_field_boundary(ax, mask_224)
 
 
-def _panel_nir_false(ax, nir_false, mask_224):
+def _panel_nir_false(ax, nir_false, mask_224, display_date: str = ''):
     ax.imshow(nir_false)
     ax.set_xticks([]); ax.set_yticks([])
-    _style(ax, 'NIR False Colour  (B8 - B4 - B3)')
+    subtitle = f'Date: {display_date}' if display_date else ''
+    _style(ax, 'NIR False Colour  (B8 - B4 - B3)', subtitle=subtitle)
     _draw_field_boundary(ax, mask_224)
 
 
-def _panel_ndvi(fig, ax, ndvi_display, mask_224):
+def _panel_ndvi(fig, ax, ndvi_display, mask_224, display_date: str = ''):
     im = ax.imshow(ndvi_display, cmap='YlGn', vmin=0, vmax=1)
     ax.set_xticks([]); ax.set_yticks([])
-    _style(ax, 'NDVI')
+    subtitle = f'Date: {display_date}' if display_date else ''
+    _style(ax, 'NDVI', subtitle=subtitle)
     _colorbar(fig, im, ax, label='NDVI')
     _draw_field_boundary(ax, mask_224)
 
@@ -218,7 +220,7 @@ def _panel_bic_curve(ax, result: ClusterResult):
     offset_y  = -bic_span * 0.14 if is_rising and opt_idx == 0 else bic_span * 0.18
     annot_label = f'Best N = {opt_n}'
     if opt_n == 1:
-        annot_label += '  (single zone)'
+        annot_label += '  (single phenotype)'
     ax.annotate(
         annot_label,
         xy  = (opt_n, bic[opt_idx]),
@@ -268,7 +270,7 @@ def _panel_pca_scatter(ax, result: ClusterResult):
     
     ax.grid(True, color=GRID_COL, linestyle='--', linewidth=0.5, alpha=0.8)
     _style(ax, title_str,
-           subtitle='Each dot = one field pixel | separated chunks = distinct crop zones',
+           subtitle='Each dot = one field pixel | separated chunks = distinct phenotypes',
            xlabel=xlabel, ylabel=ylabel)
 
 
@@ -305,7 +307,7 @@ def _panel_crop_map(ax, result: ClusterResult, mask_224):
         borderaxespad = 0.0,
     )
     _draw_field_boundary(ax, mask_224)
-    _style(ax, 'Crop Zone Map')
+    _style(ax, 'Phenotype Map')
 
 
 def _panel_confidence(fig, ax, result: ClusterResult, mask_224, mask_clean):
@@ -331,6 +333,7 @@ def _panel_confidence(fig, ax, result: ClusterResult, mask_224, mask_clean):
     _colorbar(fig, im, ax, label='Confidence')
     _style(ax, 'GMM Assignment Confidence')
 
+
 def _panel_ndvi_clusters(ax, result: ClusterResult):
     
     n = result.optimal_n
@@ -338,7 +341,7 @@ def _panel_ndvi_clusters(ax, result: ClusterResult):
 
     if n == 0:
         ax.set_ylim(-0.55, 0.45)
-        _style(ax, 'Mean NDVI per Zone')
+        _style(ax, 'Mean NDVI per Phenotype')
         return
 
     for rank, cidx in enumerate(order):
@@ -396,11 +399,123 @@ def _panel_ndvi_clusters(ax, result: ClusterResult):
     ax.set_xlabel('Mean NDVI', color=LABEL_COL, fontsize=7.5)
     ax.grid(True, axis='x', color=GRID_COL, linestyle='--',
             linewidth=0.6, alpha=0.9)
-    _style(ax, 'Mean NDVI per Zone')
+    _style(ax, 'Mean NDVI per Phenotype')
 
 
+#row 3 
 
-#row 3
+def _panel_ndvi_trajectory(
+    ax,
+    result:        ClusterResult,
+    chip_temporal: np.ndarray,
+    cloud_masks:   np.ndarray,
+    used_dates:    list[str],
+):
+    T = chip_temporal.shape[0]
+    n = result.optimal_n
+
+    # per-date NDVI stack
+    B4   = chip_temporal[:, 2, :, :].astype(np.float32)
+    B8  = chip_temporal[:, 3, :, :].astype(np.float32)
+    ndvi_ts = (B8 - B4) / (B8 + B4 + 1e-6)  
+    valid = cloud_masks == 0                 
+
+    
+    traj_mean = np.full((n, T), np.nan, dtype=np.float32)
+    traj_std  = np.full((n, T), np.nan, dtype=np.float32)
+
+    for i in range(n):
+        pheno_mask = result.pixel_cluster_map == i    
+        for t in range(T):
+            px = pheno_mask & valid[t]
+            if px.sum() > 0:
+                vals    = ndvi_ts[t][px]
+                traj_mean[i, t] = float(vals.mean())
+                traj_std[i, t]  = float(vals.std())
+
+    
+    _month = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    date_labels: list[str] = []
+    for d in used_dates:
+        try:
+            parts = d.split('-')
+            date_labels.append(f'{_month[int(parts[1])]}-{parts[2]}')
+        except Exception:
+            date_labels.append(d)
+
+    x = np.arange(T)
+
+    for i in range(n):
+        color  = _zone_color(i)
+        mean_i = traj_mean[i]
+        std_i  = traj_std[i]
+
+        valid_t = ~np.isnan(mean_i)
+        if not valid_t.any():
+            continue
+
+        
+        lo = np.where(valid_t, mean_i - std_i, np.nan)
+        hi = np.where(valid_t, mean_i + std_i, np.nan)
+        ax.fill_between(x, lo, hi, color=color, alpha=0.12, linewidth=0)
+
+        
+        
+        seg_x: list[int]   = []
+        seg_y: list[float] = []
+        name_trunc = result.crop_names[i][:22]
+        for t in range(T):
+            if valid_t[t]:
+                seg_x.append(int(x[t]))
+                seg_y.append(float(mean_i[t]))
+            else:
+                if seg_x:
+                    ax.plot(seg_x, seg_y, color=color,
+                            linewidth=1.5, alpha=0.90, zorder=3)
+                    seg_x, seg_y = [], []
+        if seg_x:
+            
+            
+            ax.plot(seg_x, seg_y, color=color, linewidth=1.5,
+                    alpha=0.90, zorder=3, label=name_trunc)
+
+    
+    step = max(1, T // 15)
+    tick_pos = list(x[::step])
+    tick_lbl = [date_labels[i] for i in range(0, T, step)]
+    ax.set_xticks(tick_pos)
+    ax.set_xticklabels(tick_lbl, rotation=45, ha='right', fontsize=6.5, color=LABEL_COL)
+    ax.set_xlim(-0.5, T - 0.5)
+    ax.set_ylim(0, 1)
+
+    
+    for t in range(1, T):
+        try:
+            if used_dates[t].split('-')[1] != used_dates[t - 1].split('-')[1]:
+                ax.axvline(t - 0.5, color='#333333', linewidth=0.8,
+                           linestyle='--', alpha=0.55, zorder=1)
+        except Exception:
+            pass
+
+    ax.grid(True, axis='y', color=GRID_COL, linestyle='--',
+            linewidth=0.6, alpha=0.9)
+    ax.legend(
+        fontsize  = 6.5,
+        facecolor  = BG_PANEL,
+        edgecolor = BORDER_COL,
+        labelcolor = LABEL_COL,
+        loc = 'upper left',
+        framealpha= 0.88,
+        handlelength = 1.5,
+        ncol  = 2,
+    )
+    _style(ax,
+           f'Phenotype NDVI Trajectories  ({T}-date stack)',
+           subtitle='Mean per phenotype  |  cloud-masked field pixels only  |  dashed verticals = month boundaries',
+           ylabel='NDVI')
+
+
+#row 4
 
 def _panel_summary(ax, result: ClusterResult):
     
@@ -437,7 +552,7 @@ def _panel_summary(ax, result: ClusterResult):
                     fontweight='bold', clip_on=True)
         left += width
 
-    #per zone table
+    #per phenotype table
     TABLE_TOP = BAR_TOP - BAR_H / 2 - 0.06       # header row y
     TABLE_BOT = 0.30
     
@@ -445,7 +560,7 @@ def _panel_summary(ax, result: ClusterResult):
 
     
     ax.text(0.02, TABLE_TOP,
-            f"{'Zone':<30}{'Pixels':>10}{'Area':>8}{'NDVI':>22}{'Conf':>8}",
+            f"{'Phenotype':<30}{'Pixels':>10}{'Area':>8}{'NDVI':>22}{'Conf':>8}",
             color='#777', fontsize=7.0,
             va='center', fontfamily='monospace')
 
@@ -480,7 +595,7 @@ def _panel_summary(ax, result: ClusterResult):
     
     meta_y = max(sep_y - 0.05, 0.10)
     ax.text(0.5, meta_y,
-            f'Zones (BIC): {result.optimal_n}   |   '
+            f'Phenotypes (BIC): {result.optimal_n}   |   '
             f'NDVI spread: {result.ndvi_diff:.3f}   |   '
             f'Avg confidence: {result.avg_confidence:.2f}', ha='center', va='center', color='#888888', fontsize=7.5)
 
@@ -490,7 +605,7 @@ def _panel_summary(ax, result: ClusterResult):
             ha='center', va='center', color='#d5d5d5', fontsize=8.0, fontstyle='italic')
 
 
-def _panel_pipeline(ax, chip, chip_enriched, mask_clean, emb_pixels, result, device, meta: dict):
+def _panel_pipeline(ax, chip, chip_enriched, mask_clean, emb_pixels, result, device, meta: dict, display_date: str = ''):
     
     ax.set_facecolor(BG_SUMMARY)
     ax.set_xlim(0, 1);  ax.set_ylim(0, 1)
@@ -508,19 +623,25 @@ def _panel_pipeline(ax, chip, chip_enriched, mask_clean, emb_pixels, result, dev
     bic_str = (f'[{min(result.bic_scores):.0f} - {max(result.bic_scores):.0f}]'
                if result.bic_scores else 'N/A')
 
+    sil_str =f'{result.silhouette:.3f}  (higher = better, max 1.0)'
+    db_str  = f'{result.db_score:.3f}  (lower = better)'
+
     lines = [
-        ('Device',   device.type.upper()),
-        ('Temporal Stack',   f'{n_dates} dates analyzed'),
-        ('Valid field pixels', f'{int(mask_clean.sum())}  (post temporal cloud filter)'),
-        ('Embeddings',   f'{emb_pixels.shape}  (Prithvi patches)'),
-        ('PCA components', str(result.field_pca.shape[1])),
-        ('BIC scores',    bic_str),
-        ('Optimal N (BIC)',  str(result.optimal_n)),
-        ('Span',   date_span),
+        ('Device', device.type.upper()),
+        ('Temporal Stack', f'{n_dates} dates analyzed'),
+        ('Display date',display_date if display_date else 'composite'),
+        ('Valid field px',f'{int(mask_clean.sum())}  (post temporal cloud filter)'),
+        ('Embeddings',  f'{emb_pixels.shape}  (Prithvi patches)'),
+        ('PCA components',  str(result.field_pca.shape[1])),
+        ('BIC scores', bic_str),
+        ('Optimal N (BIC)', str(result.optimal_n)),
+        ('Silhouette', sil_str),
+        ('Davies-Bouldin',  db_str),
+        ('Span', date_span),
     ]
 
     for i, (key, val) in enumerate(lines):
-        y = 0.87 - i * 0.105
+        y = 0.92 - i * 0.082
         ax.text(0.04, y, f'{key}:', color=CAPTION,
                 fontsize=7.2, va='center', fontfamily='monospace')
         ax.text(0.38, y, val,       color=LABEL_COL,
@@ -538,15 +659,18 @@ def build_dashboard(
     result: ClusterResult,
     device,
     meta: dict,
-    save_path: str,
+    display_date: str             = '',
+    chip_temporal: np.ndarray | None = None,
+    cloud_masks: np.ndarray | None = None,
+    save_path: str = '',
 ) -> None:
     
     
-    dates  = getattr(result, 'temporal_dates', [])
+    dates = getattr(result, 'temporal_dates', [])
     n_dates = getattr(result, 'n_dates', 0) or len(dates)
     t_label = f'Temporal Stack ({n_dates} Dates)  ·  ' if n_dates else ''
 
-    fig = plt.figure(figsize=(22, 18), facecolor=BG_DARK)
+    fig = plt.figure(figsize=(22, 24), facecolor=BG_DARK)
     fig.suptitle(
         f'Prithvi-EO 2.0  |  Field {FIELD_ID}  |  {t_label}'
         f'GMM + PCA + BIC',
@@ -554,11 +678,8 @@ def build_dashboard(
     )
 
     gs = gridspec.GridSpec(
-    4, 3, figure=fig,
-    hspace=0.65,  
-    wspace=0.28,
-    height_ratios=[1, 1, 1, 0.55],  
-)
+        5, 3, figure=fig,hspace=0.70,wspace=0.28,height_ratios=[1, 1, 1, 0.70, 0.55],
+    )
 
     p = [
         fig.add_subplot(gs[0, 0]),   # 0  True colour
@@ -567,24 +688,37 @@ def build_dashboard(
         fig.add_subplot(gs[1, 0]),   # 3  Encoder feature map
         fig.add_subplot(gs[1, 1]),   # 4  BIC curve
         fig.add_subplot(gs[1, 2]),   # 5  PCA scatter
-        fig.add_subplot(gs[2, 0]),   # 6  Crop zone map
+        fig.add_subplot(gs[2, 0]),   # 6  Phenotype map
         fig.add_subplot(gs[2, 1]),   # 7  Confidence
-        fig.add_subplot(gs[2, 2]),   # 8  NDVI per zone
-        fig.add_subplot(gs[3, :2]),  # 9  Summary
-        fig.add_subplot(gs[3, 2]),   # 10 Pipeline 
+        fig.add_subplot(gs[2, 2]),   # 8  NDVI per phenotype
+        fig.add_subplot(gs[3, :]),   # 9  NDVI trajectories  
+        fig.add_subplot(gs[4, :2]),  # 10 Summary
+        fig.add_subplot(gs[4, 2]),   # 11 Pipeline 
     ]
 
-    _panel_true_colour (p[0],  rgb,mask_224)
-    _panel_nir_false  (p[1],  nir_false,  mask_224)
-    _panel_ndvi  (fig, p[2],  ndvi_display, mask_224)
-    _panel_feature_map (fig, p[3],  feature_map,  mask_clean)
-    _panel_bic_curve  (p[4], result)
-    _panel_pca_scatter(p[5], result)
-    _panel_crop_map  (p[6],  result,mask_224)
-    _panel_confidence  (fig, p[7],  result,  mask_224, mask_clean)
-    _panel_ndvi_clusters(p[8], result)
-    _panel_summary  (p[9],  result)
-    _panel_pipeline   (p[10], chip, chip_enriched, mask_clean,emb_pixels, result, device, meta)
+    _panel_true_colour  (p[0],  rgb,          mask_224,  display_date)
+    _panel_nir_false    (p[1],  nir_false,    mask_224,  display_date)
+    _panel_ndvi         (fig, p[2],  ndvi_display, mask_224, display_date)
+    _panel_feature_map  (fig, p[3],  feature_map,  mask_clean)
+    _panel_bic_curve    (p[4],  result)
+    _panel_pca_scatter  (p[5],  result)
+    _panel_crop_map     (p[6],  result,       mask_224)
+    _panel_confidence   (fig, p[7],  result,  mask_224,  mask_clean)
+    _panel_ndvi_clusters(p[8],  result)
+
+    # trajectory panel 
+    if chip_temporal is not None and cloud_masks is not None:
+        _panel_ndvi_trajectory(
+            p[9], result, chip_temporal, cloud_masks,
+            getattr(result, 'temporal_dates', []),
+        )
+    else:
+        p[9].set_facecolor(BG_PANEL)
+        p[9].text(0.5, 0.5, 'Temporal data not available',ha='center', va='center', color=CAPTION,fontsize=9, transform=p[9].transAxes)
+        _style(p[9], 'Phenotype NDVI Trajectories')
+
+    _panel_summary  (p[10],  result)
+    _panel_pipeline (p[11], chip, chip_enriched, mask_clean, emb_pixels, result, device, meta, display_date)
 
     plt.savefig(save_path, dpi=160, bbox_inches='tight',facecolor=BG_DARK, edgecolor='none')
     plt.close(fig)

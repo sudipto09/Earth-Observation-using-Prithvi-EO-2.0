@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from sklearn.decomposition import PCA
 
 from config import (
-    TEMPORAL_REPEATS, PATCH_GRID, CHIP_SIZE, PATCH_MASK_THRESHOLD, INFRA_NDVI_THRESH
+    TEMPORAL_REPEATS, PATCH_GRID, CHIP_SIZE, PATCH_MASK_THRESHOLD, INFRA_NDVI_THRESH,RANDOM_SEED
 )
 
 def build_input_tensor(temporal_chips: np.ndarray, device: torch.device) -> torch.Tensor:
@@ -23,13 +23,39 @@ def extract_patch_tokens(model, input_tensor: torch.Tensor) -> np.ndarray:
     
     with torch.no_grad():
         last_block = model.forward_features(input_tensor)[-1]
-        patch_tokens = last_block[:, 1:, :]                                 
-        patch_tokens= (
-            patch_tokens
-            .reshape(1, TEMPORAL_REPEATS, PATCH_GRID * PATCH_GRID, -1)
-            .mean(dim=1)                                                     
+        patch_tokens = last_block[:, 1:, :]
+        patch_tokens= patch_tokens.reshape(
+            1, TEMPORAL_REPEATS, PATCH_GRID * PATCH_GRID, -1
         )
-    return patch_tokens.squeeze(0).cpu().numpy()   
+    return patch_tokens.squeeze(0).cpu().numpy()    
+
+
+def average_patch_tokens(patch_tokens_temporal: np.ndarray) -> np.ndarray:
+   
+    return patch_tokens_temporal.mean(axis=0)
+
+
+def extract_temporal_emb_stats(
+    patch_tokens_temporal: np.ndarray,
+    n_pca_dims: int = 16,
+) -> np.ndarray:
+    
+    T, P, D = patch_tokens_temporal.shape
+
+    
+    n_comp = min(n_pca_dims, D - 1, T * P - 1, T - 1)
+    n_comp = max(n_comp, 1)
+
+    flat = patch_tokens_temporal.reshape(T * P, D)
+    pca_emb  = PCA(n_components=n_comp, random_state=RANDOM_SEED)
+    flat_reduced = pca_emb.fit_transform(flat)              
+    reduced = flat_reduced.reshape(T, P, n_comp)       
+
+    mean_t = reduced.mean(axis=0)                         
+    std_t = reduced.std(axis=0)
+    range_t = reduced.max(axis=0) - reduced.min(axis=0)
+
+    return np.concatenate([mean_t, std_t, range_t], axis=1) 
 
 
 def upsample_embeddings(embeddings: np.ndarray) -> np.ndarray:
