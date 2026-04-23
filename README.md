@@ -103,7 +103,7 @@ Dashboard + GeoTIFF Export
 ├── visualization.py      # Multi-panel temporal dashboard 
 ├── export.py             # GeoTIFF export 
 ├── modelfactory.py       # Prithvi model loading (local weights)
-├── qgis_chip_extractor.py# Data extraction from Sentinel-2 (QGIS) 
+├── qgis_chip_extractor.py   # Data extraction from Sentinel-2 (QGIS) 
 ```
 
 ---
