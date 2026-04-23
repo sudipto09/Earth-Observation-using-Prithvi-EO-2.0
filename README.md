@@ -9,11 +9,17 @@ This project builds a **full temporal Earth Observation pipeline** using **Prith
 ## (Latest Version)
 
 Temporal stack (multi-date satellite data)
+
 Cloud & shadow masking (SCL + spectral fusion)
+
 Temporal NDVI + embedding statistics
+
 Automatic cluster selection using **BIC**
+
 Phenotype-based field analysis (instead of simple clusters)
+
 Temporal NDVI trajectory visualization
+
 Strong interpretability + confidence estimation
 
 ---
