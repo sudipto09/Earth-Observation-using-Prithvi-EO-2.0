@@ -3,7 +3,6 @@ export.py
 
 Writes the cluster map and confidence raster as a two-band GeoTIFF.
 """
-import numpy as np
 import rasterio
 from rasterio.crs import CRS
 from rasterio.transform import from_origin
@@ -12,21 +11,20 @@ from clustering import ClusterResult
 
 
 def save_geotiff(result: ClusterResult, meta: dict, save_path: str) -> None:
-    """
-    Write a two-band GeoTIFF:
-        Band 1 - integer cluster labels
-        Band 2 - per-pixel GMM confidence
-
    
-    """
-    gt = meta['source_gt']
-    x1  = meta['x1_px']
-    y1 = meta['y1_px']
-    px_w = gt[1]
-    px_h= -gt[5]
-
-    chip_origin_x = gt[0] + x1 * px_w
-    chip_origin_y = gt[3] + y1 * gt[5]
+   
+    if 'chip_gt' in meta:
+        cgt= meta['chip_gt']
+        px_w = abs(cgt[1])
+        px_h= abs(cgt[5])
+        chip_origin_x = cgt[0]
+        chip_origin_y = cgt[3]
+    else:
+        gt  = meta['source_gt']
+        px_w  = gt[1]
+        px_h = -gt[5]
+        chip_origin_x = gt[0] + meta['x1_px'] * px_w
+        chip_origin_y = gt[3] + meta['y1_px'] * gt[5]
 
     geo_transform = from_origin(chip_origin_x, chip_origin_y, px_w, px_h)
 
@@ -35,7 +33,7 @@ def save_geotiff(result: ClusterResult, meta: dict, save_path: str) -> None:
         driver = 'GTiff',
         height = CHIP_SIZE,
         width= CHIP_SIZE,
-        count  = 2,
+        count= 2,
         dtype = 'float32',
         crs   = CRS.from_wkt(meta['crs_wkt']),
         transform = geo_transform,

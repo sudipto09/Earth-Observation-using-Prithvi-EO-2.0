@@ -1,7 +1,6 @@
 """
 encoder.py
 
-Contains functions to convert raw Prithvi patch tokens into pixel-level feature maps.
 """
 import numpy as np
 import torch
@@ -9,8 +8,7 @@ import torch.nn.functional as F
 from sklearn.decomposition import PCA
 
 from config import (
-    TEMPORAL_REPEATS, PATCH_GRID, CHIP_SIZE,
-    PATCH_MASK_THRESHOLD, INFRA_NDVI_THRESH,
+    TEMPORAL_REPEATS, PATCH_GRID, CHIP_SIZE, PATCH_MASK_THRESHOLD, INFRA_NDVI_THRESH
 )
 
 def build_input_tensor(temporal_chips: np.ndarray, device: torch.device) -> torch.Tensor:
@@ -24,7 +22,7 @@ def build_input_tensor(temporal_chips: np.ndarray, device: torch.device) -> torc
 def extract_patch_tokens(model, input_tensor: torch.Tensor) -> np.ndarray:
     
     with torch.no_grad():
-        last_block  = model.forward_features(input_tensor)[-1]
+        last_block = model.forward_features(input_tensor)[-1]
         patch_tokens = last_block[:, 1:, :]                                 
         patch_tokens= (
             patch_tokens
@@ -36,7 +34,7 @@ def extract_patch_tokens(model, input_tensor: torch.Tensor) -> np.ndarray:
 
 def upsample_embeddings(embeddings: np.ndarray) -> np.ndarray:
     
-    embed_dim   = embeddings.shape[1]
+    embed_dim = embeddings.shape[1]
     emb_spatial = torch.tensor(
         embeddings.T.reshape(1, embed_dim, PATCH_GRID, PATCH_GRID),
         dtype=torch.float32,
@@ -50,8 +48,11 @@ def upsample_embeddings(embeddings: np.ndarray) -> np.ndarray:
     return emb_up.squeeze(0).reshape(embed_dim, -1).T.numpy()
 
 
-def make_patch_mask(mask_224: np.ndarray, threshold: float = 0.05) -> np.ndarray:
-    """A patch is True when >= threshold fraction of its pixels are field."""
+def make_patch_mask(mask_224: np.ndarray, threshold: float = PATCH_MASK_THRESHOLD) -> np.ndarray:
+    
+    """A patch is True when >= threshold fraction of its pixels are field.
+
+    """
     patch_size = CHIP_SIZE // PATCH_GRID
     patch_mask= np.zeros((PATCH_GRID, PATCH_GRID), dtype=bool)
 
@@ -95,7 +96,7 @@ def mask_patch_embeddings(
                 if field_ndvi_vals.size > 0 and field_ndvi_vals.mean() < infra_ndvi_thresh:
                     patch_mask[r, c] = False   
 
-    flat_mask = patch_mask.ravel()
+    flat_mask= patch_mask.ravel()
     masked= embeddings.copy()
     masked[~flat_mask] = 0.0
     return masked                           
@@ -111,8 +112,8 @@ def make_feature_map(
         if mode == 'l2':
             raw_vals = np.linalg.norm(embeddings, axis=1)
         elif mode == 'pca':
-            raw_vals = PCA(n_components=1).fit_transform(embeddings).reshape(-1)  # fixed: was raw_val
-            raw_vals = np.abs(raw_vals)
+            raw_vals = PCA(n_components=1).fit_transform(embeddings).reshape(-1) 
+            raw_vals= np.abs(raw_vals)
         else:
             raw_vals = np.linalg.norm(embeddings, axis=1)
     else:
@@ -123,15 +124,15 @@ def make_feature_map(
     if mask_224 is None:
         return raw_map
 
-    patch_mask= make_patch_mask(mask_224)
-    masked_map= raw_map.astype(float)
+    patch_mask= make_patch_mask(mask_224, threshold=PATCH_MASK_THRESHOLD)
+    masked_map = raw_map.astype(float)
     masked_map[~patch_mask] = np.nan
 
     if np.all(np.isnan(masked_map)):
         return masked_map
 
     lo= np.nanmin(masked_map)
-    hi =np.nanmax(masked_map)
+    hi= np.nanmax(masked_map)
     masked_map =(masked_map - lo)/(hi - lo + 1e-9)
 
     return masked_map

@@ -69,11 +69,11 @@ def make_cloud_shadow_mask(chip: np.ndarray) -> np.ndarray:
     ndvi = (B8 - B4) / (B8 + B4 + 1e-6)
     vegetation = ndvi > 0.25
 
-    # fixed: added B11 SWIR confirmation and vegetation guard to cloud check
+   
     cloud = (
         (B2  > cloud_thresh) &
         (B4  > cloud_thresh) &
-        (B11 > 0.1 * scale) &   # SWIR confirmation avoids bright-veg false positives
+        (B11 > 0.1 * scale) &   
         (~vegetation)
     )
     shadow= (B8 < shadow_nir) & (B11 < shadow_swir) & (~vegetation)
@@ -84,20 +84,45 @@ def make_cloud_shadow_mask(chip: np.ndarray) -> np.ndarray:
 #temporal composite and cloud handling
 
 def make_temporal_composite(
-    chip_temporal: np.ndarray,   
-    cloud_masks:   np.ndarray,   
+    chip_temporal: np.ndarray,
+    cloud_masks: np.ndarray,
+    top_n_greenest: int = 5,
 ) -> np.ndarray:
     
     T, C, H, W = chip_temporal.shape
-    valid = (cloud_masks == 0)          # (T, H, W)  bool
-    composite = np.zeros((C, H, W), dtype=np.float32)
+    valid= (cloud_masks == 0).astype(np.float32)   
 
+    # Per-date NDVI
+    B4= chip_temporal[:, 2, :, :].astype(np.float32)
+    B8 = chip_temporal[:, 3, :, :].astype(np.float32)
+    ndvi_t = (B8 - B4) / (B8 + B4 + 1e-6)           
+
+    
+    ndvi_valid = np.where(valid, ndvi_t, -np.inf)    
+
+    
+    k = min(top_n_greenest, T)
+    sorted_idx = np.argsort(ndvi_valid, axis=0)       
+    top_idx    = sorted_idx[-k:, :, :]                
+
+    composite = np.zeros((C, H, W), dtype=np.float32)
     for c in range(C):
-        band = chip_temporal[:, c, :, :].astype(np.float32)   # (T, H, W)
-        masked  =np.where(valid, band, np.nan)
-        median = np.nanmedian(masked, axis=0)        # NaN where all cloudy
-        fallback = np.median(band, axis=0)                 # always defined
-        composite[c] = np.where(np.isnan(median), fallback, median)
+        band = chip_temporal[:, c, :, :].astype(np.float32)   
+        gathered= np.take_along_axis(band, top_idx, axis=0)  
+        valid_gathered = np.take_along_axis(valid, top_idx, axis=0)
+
+        gathered_masked = np.where(valid_gathered, gathered, np.nan)
+        
+        with np.errstate(all='ignore'):
+            px_median = np.nanmedian(gathered_masked, axis=0)      
+
+        
+        with np.errstate(all='ignore'):
+            fallback = np.nanmedian(np.where(valid, band, np.nan), axis=0)
+        all_nan_fallback = np.median(band, axis=0)
+        fallback = np.where(np.isnan(fallback), all_nan_fallback, fallback)
+
+        composite[c] = np.where(np.isnan(px_median), fallback, px_median)
 
     return composite
 
