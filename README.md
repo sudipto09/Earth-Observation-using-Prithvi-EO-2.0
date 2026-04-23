@@ -1,71 +1,88 @@
 # Earth Observation using Prithvi EO 2.0
 
-### Crop Analysis & Field Clustering with Foundation Models
+### Temporal Crop Analysis & Multi-Cropping Detection with Foundation Models
 
-This project builds a **complete Earth Observation pipeline** using **Prithvi EO 2.0 embeddings + spectral features + unsupervised learning** to analyze agricultural fields.
+This project builds a **full temporal Earth Observation pipeline** using **Prithvi EO 2.0 + spectral features + temporal statistics + unsupervised learning** to analyze **intra-field crop variability (multi-cropping / stress zones)**.
 
-It performs:
+---
 
-* Crop zone detection
-* NDVI-based vegetation analysis
-* Feature extraction using foundation models
-* Clustering using PCA + Gaussian Mixture Models (GMM)
-* GeoTIFF export + visual dashboards
+## (Latest Version)
+
+Temporal stack (multi-date satellite data)
+Cloud & shadow masking (SCL + spectral fusion)
+Temporal NDVI + embedding statistics
+Automatic cluster selection using **BIC**
+Phenotype-based field analysis (instead of simple clusters)
+Temporal NDVI trajectory visualization
+Strong interpretability + confidence estimation
 
 ---
 
 ## Key Idea
 
-Instead of relying only on raw spectral indices (like NDVI), this project combines:
+Instead of analyzing a **single snapshot**, this project uses:
 
-* **Prithvi embeddings (deep features)**
+* **Prithvi EO embeddings (deep features across time)**
 * **Spectral indices (NDVI, NDWI, SAVI, NDRE)**
-* **Spatial information (pixel coordinates)**
+* **Temporal statistics (growth patterns, variability)**
+* **Spatial information**
 
-Then clusters field pixels into meaningful crop zones.
+to identify **hidden patterns inside fields**, such as:
+
+* Multiple crops (multi-cropping)
+* Growth differences
+* Stress zones
 
 ---
 
-## Sample Outputs
+## Sample Output (Temporal Dashboard)
 
-### Field Analysis Dashboard
+<img width="2162" height="1942" alt="prithvi_dashboard_v2_FID991_2024-07-14" src="C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output\FID_2701\prithvi_dashboard_v2_Temporal.png">
 
-<img width="2162" height="1942" alt="prithvi_dashboard_v2_FID991_2024-07-14" src="https://github.com/user-attachments/assets/0605695a-91a5-4517-aa50-a149d579dac5" />
+### Dashboard shows:
 
-
-
-
-Dashboard shows:
-
-* RGB & NIR views
-* NDVI map
-* Feature intensity from encoder
-* PCA variance + scatter
-* Crop cluster map
+* RGB & NIR views (best cloud-free date)
+* NDVI map (vegetation health)
+* Encoder feature intensity
+* BIC-based cluster selection
+* PCA feature space
+* Phenotype map (crop zones)
 * Confidence map
-* Final interpretation summary
+* Mean NDVI per phenotype
+* Temporal NDVI trajectories (37 dates)
+* Final field summary
 
 ---
 
-## Pipeline Overview
+## 🧠 Pipeline Overview
 
 ```text
-Raw Satellite Chip (6 bands)
+Multi-Date Satellite Data (T × 6 bands)
         ↓
-Spectral Processing (NDVI, NDWI, SAVI, NDRE)
+Cloud & Shadow Masking (SCL + Spectral)
+        ↓
+Temporal NDVI Computation
+        ↓
+Temporal Composite (best clear pixels)
         ↓
 Prithvi EO 2.0 Encoder
         ↓
-Patch Embeddings → Upsampled to Pixels
+Patch Tokens (per date)
+        ↓
+Temporal Embedding Statistics
+        ↓
+Upsampling → Pixel Features
         ↓
 Feature Fusion:
-   [Embeddings + Spectral + Spatial]
+   [Embeddings + Temporal + Spectral + Spatial]
         ↓
 PCA (Dimensionality Reduction)
         ↓
-GMM Clustering (Unsupervised)
+GMM Clustering (with BIC selection)
         ↓
-Crop Zone Mapping + Confidence
+Phenotype Mapping + Confidence
+        ↓
+Temporal Analysis + Visualization
         ↓
 Dashboard + GeoTIFF Export
 ```
@@ -76,25 +93,31 @@ Dashboard + GeoTIFF Export
 
 ```bash
 .
-├── main.py              # Entry point (runs full pipeline)
-├── config.py           # Configuration (field ID, paths, parameters)
-├── data_loader.py      # Loads chip, mask, metadata
-├── spectral.py         # NDVI & spectral indices
-├── encoder.py          # Prithvi embedding extraction
-├── clustering.py       # PCA + GMM clustering
-├── visualization.py    # Dashboard generation
-├── export.py           # GeoTIFF export
+├── main.py                # Full temporal pipeline execution :contentReference[oaicite:0]{index=0}
+├── config.py             # Field + temporal configuration (multi-date support) :contentReference[oaicite:1]{index=1}
+├── data_loader.py        # Loads temporal chips, masks, metadata :contentReference[oaicite:2]{index=2}
+├── cloud_mask.py         # SCL + spectral cloud masking :contentReference[oaicite:3]{index=3}
+├── spectral.py           # NDVI, indices, temporal composite :contentReference[oaicite:4]{index=4}
+├── encoder.py            # Prithvi embedding + temporal stats :contentReference[oaicite:5]{index=5}
+├── clustering.py         # PCA + GMM + BIC + validation :contentReference[oaicite:6]{index=6}
+├── visualization.py      # Multi-panel temporal dashboard :contentReference[oaicite:7]{index=7}
+├── export.py             # GeoTIFF export :contentReference[oaicite:8]{index=8}
+├── modelfactory.py       # Prithvi model loading (local weights)
+├── qgis_chip_extractor.py# Data extraction from Sentinel-2 (QGIS) :contentReference[oaicite:9]{index=9}
 ```
 
 ---
 
 ## Core Components
 
-### Data Loading
+### Cloud & Shadow Masking
 
-* Loads satellite chip, mask, and metadata
-* Ensures proper spatial alignment
-   
+* Combines:
+
+  * Sentinel-2 SCL labels
+  * Spectral thresholding
+* Ensures only **clean pixels are used**
+* Robust fallback when SCL is unavailable 
 
 ---
 
@@ -102,20 +125,30 @@ Dashboard + GeoTIFF Export
 
 * Computes:
 
-  * NDVI (vegetation health)
-  * NDWI (water content)
-  * SAVI (soil-adjusted vegetation)
-  * NDRE (red-edge proxy)
+  * NDVI (vegetation)
+  * NDWI (water)
+  * SAVI (soil-adjusted)
+  * NDRE (red-edge proxy) 
+
+---
+
+### Prithvi EO Encoder
+
+* Processes **temporal satellite stacks**
+* Extracts:
+
+  * Patch embeddings (per date)
+  * Temporal statistics (mean, std, range)
 
 
 
 ---
 
-### Prithvi Encoder
+### Temporal Feature Engineering
 
-* Converts image → transformer embeddings
-* Extracts patch tokens
-* Upsamples to pixel-level
+* NDVI trajectories per pixel
+* Growth patterns across season
+* Embedding variability over time
 
 
 
@@ -123,78 +156,88 @@ Dashboard + GeoTIFF Export
 
 ### Clustering (Core Logic)
 
+* Feature fusion:
 
-* Normalize features
-* Add spatial coordinates
-* Apply PCA (dimensionality reduction)
-* Cluster using GMM
+  ```
+  Embeddings + Temporal + Spectral + Spatial
+  ```
+* PCA for dimensionality reduction
+* **GMM clustering with automatic BIC selection**
+* Quality metrics:
 
+  * Silhouette score
+  * Davies-Bouldin index
 
-
-Smart handling:
-
-* Small samples → fallback to single cluster
-* Confidence estimation using GMM probabilities
-* NDVI-based interpretation of clusters
+Fully adaptive clustering pipeline 
 
 ---
 
-### Visualization Dashboard
+### Phenotype Mapping
 
-Generates a **multi-panel analysis dashboard**:
+Instead of raw clusters → meaningful **phenotypes**:
 
-* PCA plots
-* NDVI comparison
-* Crop zone segmentation
-* Confidence heatmaps
-* Final interpretation
+* High NDVI → healthy crop zones
+* Low NDVI → stress / weak growth
+* Mixed → possible multi-cropping
 
- 
+---
+
+### Temporal Analysis
+
+Tracks:
+
+* NDVI evolution over time
+* Growth differences between zones
+
+Key insight:
+
+> Same field ≠ same behavior over time
 
 ---
 
 ### GeoTIFF Export
 
-Exports results for GIS tools:
-
-* Band 1 → cluster labels
+* Band 1 → phenotype labels
 * Band 2 → confidence
 
-
+→ Ready for GIS tools (QGIS, ArcGIS) 
 
 ---
 
 ## Example Insights
 
-The model produces interpretations like:
+The system can detect:
 
-* **Weak spectral separation** → likely stress zones
-* **Strong separation** → distinct crop types
+* **Multi-cropping within a field**
+* **Stress zones vs healthy regions**
+* **Growth differences over time**
+* **Weak vs strong spectral separation**
 
-Example metrics:
+Example outputs:
 
-* NDVI gap
-* Cluster percentages
+* NDVI gap between phenotypes
+* Cluster distribution (%)
 * Confidence scores
+* Temporal NDVI curves
 
 ---
 
 ## Configuration
 
-Edit parameters in:
-
 ```python
-FIELD_ID = 920
-DATE = '2024-07-14'
+FIELD_ID = 2701
 
-N_CLUSTERS = 2
+DATES = [...]   # 37 temporal observations
+
+MAX_CLUSTERS = 8
 PCA_COMPONENT = 10
+
 CHIP_SIZE = 224
 ```
 
 ---
 
-## How to Run
+## ▶️ How to Run
 
 ### 1. Install dependencies
 
@@ -210,21 +253,25 @@ python main.py
 
 ---
 
-##  Highlight of the project
+## Highlights
 
-* Use of **foundation models (Prithvi EO)**
-* Combining **deep learning + classical ML (GMM, PCA)**
-* Real-world **remote sensing pipeline**
-* Strong **visual explainability**
-* Export to **GIS-compatible formats**
+* Foundation model usage (Prithvi EO 2.0)
+* Temporal + spatial + spectral fusion
+* Fully unsupervised learning pipeline
+* Strong interpretability 
+* Real-world agricultural application
+* Works on Sentinel-2 satellite data
+* Temporal crop behavior modeling
 
 ---
 
-## Future Improvements
+## 🔮 Future Improvements
 
-* Integrate **temporal time-series analysis**
-* Replace GMM with **Deep Clustering / Self-supervised learning**
-* Deploy as **web dashboard (Streamlit)**
+* Supervised crop classification (if labels available)
+* Multimodal fusion (weather, soil data)
+* Deep clustering / self-supervised learning
+* Real-time monitoring system
+* Web deployment (Streamlit / dashboard)
 
 ---
 
@@ -232,20 +279,19 @@ python main.py
 
 * IBM & NASA – Prithvi EO 2.0
 * Open-source geospatial ML ecosystem
-* Greenspin GmbH (Würzburg) for providing data, infrastructure, and domain context
+* Greenspin GmbH (Würzburg) for providing data, infrastructure, and domain support
 
 ---
 
 ## Author
 
 **Sudipto Chakraborty**
-
 MSc Aerospace Informatics
-
 University of Würzburg
 
 ---
 
 If you like this project,
 Give it a ⭐ and feel free to contribute!
+
 
