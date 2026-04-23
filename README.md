@@ -37,7 +37,7 @@ to identify **hidden patterns inside fields**, such as:
 
 ## Sample Output (Temporal Dashboard)
 
-<img width="2162" height="1942" alt="prithvi_dashboard_v2_FID991_2024-07-14" src="C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output\FID_2701\prithvi_dashboard_v2_Temporal.png">
+![Temporal Dashboard](prithvi/greenspin/multi_crop_output/FID_2701/prithvi_dashboard_v2_Temporal.png)
 
 ### Dashboard shows:
 
