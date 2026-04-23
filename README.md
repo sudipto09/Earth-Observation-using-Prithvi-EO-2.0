@@ -54,7 +54,7 @@ to identify **hidden patterns inside fields**, such as:
 
 ---
 
-## 🧠 Pipeline Overview
+## Pipeline Overview
 
 ```text
 Multi-Date Satellite Data (T × 6 bands)
@@ -237,7 +237,7 @@ CHIP_SIZE = 224
 
 ---
 
-## ▶️ How to Run
+## How to Run
 
 ### 1. Install dependencies
 
@@ -265,7 +265,7 @@ python main.py
 
 ---
 
-## 🔮 Future Improvements
+## Future Improvements
 
 * Supervised crop classification (if labels available)
 * Multimodal fusion (weather, soil data)
@@ -286,7 +286,9 @@ python main.py
 ## Author
 
 **Sudipto Chakraborty**
+
 MSc Aerospace Informatics
+
 University of Würzburg
 
 ---
