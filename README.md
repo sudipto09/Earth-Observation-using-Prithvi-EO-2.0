@@ -93,17 +93,17 @@ Dashboard + GeoTIFF Export
 
 ```bash
 .
-├── main.py                # Full temporal pipeline execution :contentReference[oaicite:0]{index=0}
-├── config.py             # Field + temporal configuration (multi-date support) :contentReference[oaicite:1]{index=1}
-├── data_loader.py        # Loads temporal chips, masks, metadata :contentReference[oaicite:2]{index=2}
-├── cloud_mask.py         # SCL + spectral cloud masking :contentReference[oaicite:3]{index=3}
-├── spectral.py           # NDVI, indices, temporal composite :contentReference[oaicite:4]{index=4}
-├── encoder.py            # Prithvi embedding + temporal stats :contentReference[oaicite:5]{index=5}
-├── clustering.py         # PCA + GMM + BIC + validation :contentReference[oaicite:6]{index=6}
-├── visualization.py      # Multi-panel temporal dashboard :contentReference[oaicite:7]{index=7}
-├── export.py             # GeoTIFF export :contentReference[oaicite:8]{index=8}
+├── main.py               # Full temporal pipeline execution 
+├── config.py             # Field + temporal configuration (multi-date support) 
+├── data_loader.py        # Loads temporal chips, masks, metadata 
+├── cloud_mask.py         # SCL + spectral cloud masking 
+├── spectral.py           # NDVI, indices, temporal composite 
+├── encoder.py            # Prithvi embedding + temporal stats 
+├── clustering.py         # PCA + GMM + BIC + validation 
+├── visualization.py      # Multi-panel temporal dashboard 
+├── export.py             # GeoTIFF export 
 ├── modelfactory.py       # Prithvi model loading (local weights)
-├── qgis_chip_extractor.py# Data extraction from Sentinel-2 (QGIS) :contentReference[oaicite:9]{index=9}
+├── qgis_chip_extractor.py# Data extraction from Sentinel-2 (QGIS) 
 ```
 
 ---
@@ -292,6 +292,6 @@ University of Würzburg
 ---
 
 If you like this project,
-Give it a ⭐ and feel free to contribute!
+give it a ⭐ and feel free to contribute!
 
 
