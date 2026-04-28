@@ -1,8 +1,11 @@
+````markdown
 # Earth Observation using Prithvi EO 2.0
 
 ### Temporal Crop Analysis & Multi-Cropping Detection with Foundation Models
 
 This project builds a **full temporal Earth Observation pipeline** using **Prithvi EO 2.0 + spectral features + temporal statistics + unsupervised learning** to analyze **intra-field crop variability (multi-cropping / stress zones)**.
+
+The main objective is to detect and understand **multi-cropping patterns within agricultural fields**, identify crop variability, and analyze field-level growth behavior across time using satellite imagery and foundation model embeddings.
 
 ---
 
@@ -20,7 +23,11 @@ Phenotype-based field analysis (instead of simple clusters)
 
 Temporal NDVI trajectory visualization
 
+Per-date clustering analysis
+
 Strong interpretability + confidence estimation
+
+GeoTIFF export for GIS workflows
 
 ---
 
@@ -38,6 +45,7 @@ to identify **hidden patterns inside fields**, such as:
 * Multiple crops (multi-cropping)
 * Growth differences
 * Stress zones
+* Temporal crop behavior changes
 
 ---
 
@@ -88,10 +96,12 @@ GMM Clustering (with BIC selection)
         ↓
 Phenotype Mapping + Confidence
         ↓
+Per-Date Clustering Validation
+        ↓
 Temporal Analysis + Visualization
         ↓
 Dashboard + GeoTIFF Export
-```
+````
 
 ---
 
@@ -99,17 +109,18 @@ Dashboard + GeoTIFF Export
 
 ```bash
 .
-├── main.py               # Full temporal pipeline execution 
-├── config.py             # Field + temporal configuration (multi-date support) 
-├── data_loader.py        # Loads temporal chips, masks, metadata 
-├── cloud_mask.py         # SCL + spectral cloud masking 
-├── spectral.py           # NDVI, indices, temporal composite 
-├── encoder.py            # Prithvi embedding + temporal stats 
-├── clustering.py         # PCA + GMM + BIC + validation 
-├── visualization.py      # Multi-panel temporal dashboard 
-├── export.py             # GeoTIFF export 
-├── modelfactory.py       # Prithvi model loading (local weights)
-├── qgis_chip_extractor.py   # Data extraction from Sentinel-2 (QGIS) 
+├── main.py                    # Full temporal pipeline execution
+├── config.py                  # Field + temporal configuration
+├── data_loader.py             # Loads temporal chips, masks, metadata
+├── cloud_mask.py              # SCL + spectral cloud masking
+├── spectral.py                # NDVI, indices, temporal composite
+├── encoder.py                 # Prithvi embedding + temporal statistics
+├── clustering.py              # PCA + GMM + BIC + validation
+├── per_date_clustering.py     # Per-date clustering consistency analysis
+├── visualization.py           # Multi-panel temporal dashboard
+├── export.py                  # GeoTIFF export
+├── modelfactory.py            # Prithvi model loading (local weights)
+├── qgis_chip_extractor.py     # Sentinel-2 chip extraction from QGIS
 ```
 
 ---
@@ -122,8 +133,12 @@ Dashboard + GeoTIFF Export
 
   * Sentinel-2 SCL labels
   * Spectral thresholding
+
 * Ensures only **clean pixels are used**
-* Robust fallback when SCL is unavailable 
+
+* Robust fallback when SCL is unavailable
+
+This improves temporal consistency and prevents cloud contamination from affecting clustering results.
 
 ---
 
@@ -133,30 +148,40 @@ Dashboard + GeoTIFF Export
 
   * NDVI (vegetation)
   * NDWI (water)
-  * SAVI (soil-adjusted)
-  * NDRE (red-edge proxy) 
+  * SAVI (soil-adjusted vegetation)
+  * NDRE (red-edge proxy)
+
+* Builds temporal composite imagery using the **greenest cloud-free pixels**
+
+This helps preserve the most informative vegetation signals across the season.
 
 ---
 
 ### Prithvi EO Encoder
 
-* Processes **temporal satellite stacks**
+* Processes **multi-temporal satellite stacks**
+
 * Extracts:
 
   * Patch embeddings (per date)
-  * Temporal statistics (mean, std, range)
+  * Temporal embedding statistics:
 
+    * mean
+    * standard deviation
+    * temporal range
 
+These embeddings serve as the deep feature backbone of the project.
 
 ---
 
 ### Temporal Feature Engineering
 
 * NDVI trajectories per pixel
-* Growth patterns across season
+* Growth patterns across the season
 * Embedding variability over time
+* Temporal stability analysis
 
-
+This helps distinguish crop behavior beyond what a single image can show.
 
 ---
 
@@ -164,27 +189,48 @@ Dashboard + GeoTIFF Export
 
 * Feature fusion:
 
-  ```
-  Embeddings + Temporal + Spectral + Spatial
-  ```
+```text
+Embeddings + Temporal + Spectral + Spatial
+```
+
 * PCA for dimensionality reduction
+
 * **GMM clustering with automatic BIC selection**
+
 * Quality metrics:
 
   * Silhouette score
   * Davies-Bouldin index
+  * Cluster confidence estimation
 
-Fully adaptive clustering pipeline 
+This creates a fully adaptive and robust clustering pipeline.
 
 ---
 
 ### Phenotype Mapping
 
-Instead of raw clusters → meaningful **phenotypes**:
+Instead of raw clusters → meaningful **phenotypes**
+
+Examples:
 
 * High NDVI → healthy crop zones
 * Low NDVI → stress / weak growth
-* Mixed → possible multi-cropping
+* Mixed patterns → possible multi-cropping
+* Temporal instability → abnormal growth behavior
+
+This improves interpretability for real agricultural decision-making.
+
+---
+
+### Per-Date Clustering Analysis
+
+The system also performs clustering across individual dates to validate:
+
+* temporal consistency
+* cluster stability
+* seasonal crop transitions
+
+This helps verify whether patterns remain stable or change significantly over time.
 
 ---
 
@@ -194,19 +240,28 @@ Tracks:
 
 * NDVI evolution over time
 * Growth differences between zones
+* Phenotype-specific crop trajectories
 
 Key insight:
 
 > Same field ≠ same behavior over time
 
+This is one of the strongest research contributions of the project.
+
 ---
 
 ### GeoTIFF Export
 
-* Band 1 → phenotype labels
-* Band 2 → confidence
+Exports:
 
-→ Ready for GIS tools (QGIS, ArcGIS) 
+* Band 1 → phenotype labels
+* Band 2 → confidence values
+
+Ready for:
+
+* QGIS
+* ArcGIS
+* GIS-based agricultural workflows
 
 ---
 
@@ -218,6 +273,7 @@ The system can detect:
 * **Stress zones vs healthy regions**
 * **Growth differences over time**
 * **Weak vs strong spectral separation**
+* **Phenotype consistency across dates**
 
 Example outputs:
 
@@ -225,6 +281,7 @@ Example outputs:
 * Cluster distribution (%)
 * Confidence scores
 * Temporal NDVI curves
+* Seasonal growth comparisons
 
 ---
 
@@ -239,6 +296,7 @@ MAX_CLUSTERS = 8
 PCA_COMPONENT = 10
 
 CHIP_SIZE = 224
+PATCH_GRID = 14
 ```
 
 ---
@@ -261,23 +319,27 @@ python main.py
 
 ## Highlights
 
-* Foundation model usage (Prithvi EO 2.0)
-* Temporal + spatial + spectral fusion
+* Foundation model usage (**Prithvi EO 2.0**)
+* Temporal + spatial + spectral feature fusion
 * Fully unsupervised learning pipeline
-* Strong interpretability 
+* Automatic cluster count selection using BIC
+* Strong interpretability and explainability
 * Real-world agricultural application
-* Works on Sentinel-2 satellite data
+* Works on Sentinel-2 satellite imagery
 * Temporal crop behavior modeling
+* GIS-compatible outputs
+* Multi-cropping detection pipeline
 
 ---
 
 ## Future Improvements
 
-* Supervised crop classification (if labels available)
-* Multimodal fusion (weather, soil data)
+* Supervised crop classification (if labels become available)
+* Multimodal fusion (weather + soil + sensor data)
 * Deep clustering / self-supervised learning
 * Real-time monitoring system
-* Web deployment (Streamlit / dashboard)
+* Streamlit dashboard deployment
+* Integration with precision agriculture decision systems
 
 ---
 
@@ -285,7 +347,7 @@ python main.py
 
 * IBM & NASA – Prithvi EO 2.0
 * Open-source geospatial ML ecosystem
-* Greenspin GmbH (Würzburg) for providing data, infrastructure, and domain support
+* Greenspin GmbH (Würzburg) for providing data, infrastructure, imagery, and domain support during the internship
 
 ---
 
@@ -302,4 +364,5 @@ University of Würzburg
 If you like this project,
 give it a ⭐ and feel free to contribute!
 
-
+```
+```
