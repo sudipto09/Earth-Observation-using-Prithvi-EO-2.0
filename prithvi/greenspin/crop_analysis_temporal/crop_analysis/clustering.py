@@ -62,6 +62,7 @@ def _select_optimal_n(
     field_pca: np.ndarray,
     effective_max: int = MAX_CLUSTERS,
     min_n: int = MIN_CLUSTERS,
+    n_field_patches: int = 196,       
 ) -> tuple[int, list[int], list[float]]:
 
     n_samples = field_pca.shape[0]
@@ -72,14 +73,21 @@ def _select_optimal_n(
     bic_scores: list[float] = []
     for n in n_range:
         gmm = GaussianMixture(
-            n_components= n,
-            covariance_type = 'full',
-            random_state = RANDOM_SEED,
-            n_init   = 3,
-            reg_covar  = 1e-3,
+            n_components=n,
+            covariance_type='full',
+            random_state=RANDOM_SEED,
+            n_init=3,
+            reg_covar=1e-3,
         )
         gmm.fit(field_pca)
         bic_scores.append(float(gmm.bic(field_pca)))
+
+    if n_field_patches < 30:
+        penalty_weight = max(0.0, 1.0 - n_field_patches / 30.0)
+        bic_scores = [
+            s + penalty_weight * 0.05 * abs(s) * (n - min_n)
+            for n, s in zip(n_range, bic_scores)
+        ]
 
     optimal_n = n_range[int(np.argmin(bic_scores))]
     return optimal_n, n_range, bic_scores
@@ -140,12 +148,8 @@ def run_clustering(
     pca = PCA(n_components=n_components, random_state=RANDOM_SEED)
     field_pca = pca.fit_transform(field_combined)
 
-    #pre-BIC bimodality check
-    # if per-pixel mean NDVI (temporal_stats col 0 = mean_ndvi) has a large
-    # interquartile spread the field contains genuinely different land-cover
-    # types (e.g. bare soil vs crop). Force BIC to consider at least 2 clusters
-    # so embedding dominance cannot collapse them into 1.
-    BIMODAL_IQR_THRESH = 0.20   # IQR gap above this → force min 2 clusters
+   
+    BIMODAL_IQR_THRESH = 0.20   
     forced_min = MIN_CLUSTERS
     if temporal_stats is not None:
         ts_field_pre = temporal_stats[field_mask_flat]   # (n_samples, n_dims)
@@ -178,7 +182,7 @@ def run_clustering(
 
     else:
         optimal_n, bic_n_range, bic_scores = _select_optimal_n(
-            field_pca, effective_max, min_n=forced_min,
+            field_pca, effective_max, min_n=forced_min, n_field_patches=n_field_patches
         )
 
         gmm_final= GaussianMixture(

@@ -19,15 +19,15 @@ def build_input_tensor(temporal_chips: np.ndarray, device: torch.device) -> torc
     return t_tensor.to(device)
 
 
-def extract_patch_tokens(model, input_tensor: torch.Tensor) -> np.ndarray:
-    
+def extract_patch_tokens(model, input_tensor: torch.Tensor, n_dates: int | None = None) -> np.ndarray:
     with torch.no_grad():
         last_block = model.forward_features(input_tensor)[-1]
         patch_tokens = last_block[:, 1:, :]
-        patch_tokens= patch_tokens.reshape(
-            1, TEMPORAL_REPEATS, PATCH_GRID * PATCH_GRID, -1
+        t= n_dates if n_dates is not None else TEMPORAL_REPEATS
+        patch_tokens = patch_tokens.reshape(
+            1, t, PATCH_GRID * PATCH_GRID, -1
         )
-    return patch_tokens.squeeze(0).cpu().numpy()    
+    return patch_tokens.squeeze(0).cpu().numpy()   
 
 
 def average_patch_tokens(patch_tokens_temporal: np.ndarray) -> np.ndarray:

@@ -4,14 +4,10 @@ visualization.py
 Builds a 5-row analysis dashboard for the Prithvi crop-zone pipeline.
 
 """
-from ast import Add
-from logging import config
-from unittest import result
-from unittest import result
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Patch
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from clustering import ClusterResult
@@ -241,90 +237,114 @@ def _panel_bic_curve(ax, result: ClusterResult):
 
 
 def _panel_pca_scatter(ax, result: ClusterResult):
-    
+
     colours = [_zone_color(l) for l in result.pixel_labels]
+    pca_data   = result.field_pca
+    n_pc   = pca_data.shape[1]
+    n_pheno  = result.optimal_n
+    labels_arr = np.array(result.pixel_labels)
+
+    fig = ax.figure
+    pos = ax.get_position()
+    ax.set_visible(False)
+
+    x0, y0 = pos.x0, pos.y0
+    W,  H  = pos.width, pos.height
+    gap  = 0.012
+
+    w_3d = W * 0.60
+    w_den = W * 0.36
 
     
-    three_d = result.field_pca.shape[1] >= 3
+    fig.text(
+        x0 + W / 2, y0 + H + 0.022,
+        'Feature Space  :  PCA Projections',
+        ha='center', va='bottom',
+        color=TITLE_COL, fontsize=9, fontweight='semibold',
+    )
+    fig.text(
+        x0 + W / 2, y0 + H + 0.008,
+        'each dot = one field pixel  |  colour = temporal phenotype  |  ● = cluster centroid',
+        ha='center', va='bottom',
+        color=CAPTION, fontsize=6.0, fontstyle='italic',
+    )
 
-    if three_d:
-        # Convert existing axis into 3D axis
-        fig = ax.figure
-        pos = ax.get_position()
-        ax.remove()
-        ax = fig.add_axes(pos, projection='3d')
+    
+    ax3d = fig.add_axes([x0, y0, w_3d, H * 0.92], projection='3d')
+    ax3d.set_facecolor(BG_PANEL)
+    ax3d.patch.set_alpha(0.0)
 
-        ax.scatter(
-            result.field_pca[:, 0],   # PC1
-            result.field_pca[:, 1],   # PC2
-            result.field_pca[:, 2],   # PC3
-            c=colours,
-            alpha=0.50,
-            s=10,
-            edgecolors='none',
-            rasterized=True
-        )
+    n_pts  = len(result.pixel_labels)
+    stride = max(1, n_pts // 6000)
+    idx    = np.arange(0, n_pts, stride)
 
-        ax.set_xlabel('PC 1', color=LABEL_COL, fontsize=7.5)
-        ax.set_ylabel('PC 2', color=LABEL_COL, fontsize=7.5)
-        ax.set_zlabel('PC 3', color=LABEL_COL, fontsize=7.5)
+    pc1 = pca_data[idx, 0]
+    pc2 = pca_data[idx, 1] if n_pc >= 2 else np.zeros(len(idx))
+    pc3  = pca_data[idx, 2] if n_pc >= 3 else np.zeros(len(idx))
+    col_sub = [colours[i] for i in idx]
 
-        ax.set_title(
-            'Feature Space - PCA (3D)',
-            color=TITLE_COL,
-            fontsize=9,
-            pad=12,
-            fontweight='semibold'
-        )
+    ax3d.scatter(
+        pc1, pc2, pc3,
+        c=col_sub, alpha=0.45, s=5,
+        edgecolors='none', rasterized=True, depthshade=True,
+    )
 
-    else:
-        rng = np.random.default_rng(0)
-        jitter = rng.uniform(-0.3, 0.3, len(result.pixel_labels))
+    
+    pc1_range= float(np.ptp(pca_data[:, 0])) or 1.0
+    pc2_range = float(np.ptp(pca_data[:, 1])) if n_pc >= 2 else 1.0
+    pc3_range= float(np.ptp(pca_data[:, 2])) if n_pc >= 3 else 1.0
 
-        ax.scatter(
-            result.field_pca[:, 0],
-            jitter,
-            c=colours,
-            alpha=0.50,
-            s=10,
-            edgecolors='none',
-            rasterized=True
-        )
+    for i in range(n_pheno):
+        sel = labels_arr == i
+        if not sel.any():
+            continue
+        cx  = float(pca_data[sel, 0].mean())
+        cy= float(pca_data[sel, 1].mean()) if n_pc >= 2 else 0.0
+        cz  = float(pca_data[sel, 2].mean()) if n_pc >= 3 else 0.0
+        color = _zone_color(i)
+        ax3d.scatter([cx], [cy], [cz],
+                     c=color, s=60, edgecolors='white',
+                     linewidths=0.8, zorder=5, depthshade=False)
+        name_short = (result.crop_names[i][:14]
+                      if i < len(result.crop_names) else f'P{i+1}')
+        ax3d.text(cx + pc1_range * 0.08,cy + pc2_range * 0.08,cz + pc3_range * 0.10,name_short,color=color, fontsize=5.5, va='bottom', zorder=6)
 
-        xlabel, ylabel = 'PC 1', 'Jitter'
-        title_str = 'Feature Space (PC1)'
+    # axis styling
+    ax3d.set_xlabel('PC 1', color=LABEL_COL, fontsize=6.5, labelpad=2)
+    ax3d.set_ylabel('PC 2', color=LABEL_COL, fontsize=6.5, labelpad=2)
+    ax3d.set_zlabel('PC 3', color=LABEL_COL, fontsize=6.5, labelpad=2) 
 
-        ax.legend(
-            handles=[
-                Patch(
-                    facecolor=_zone_color(i),
-                    label=result.crop_names[i][:28]
-                    if len(result.crop_names[i]) > 28
-                    else result.crop_names[i]
-                )
-                for i in np.unique(result.pixel_labels)
-            ],
-            fontsize=6.5,
-            facecolor=BG_PANEL,
-            edgecolor=BORDER_COL,
-            labelcolor=LABEL_COL,
-            loc='center left',
-            bbox_to_anchor=(1.02, 0.5),
-            framealpha=0.85,
-            handlelength=1.2
-        )
+    for axis in (ax3d.xaxis, ax3d.yaxis, ax3d.zaxis): 
+        axis.label.set_color(LABEL_COL)
+        axis._axinfo['grid']['color']     = GRID_COL
+        axis._axinfo['grid']['linewidth'] = 0.4
+        
+        axis.set_tick_params(colors=LABEL_COL, labelsize=5, pad=0)
+        axis.set_major_locator(plt.MaxNLocator(3))
 
-        ax.grid(True, color=GRID_COL, linestyle='--',
-                linewidth=0.5, alpha=0.8)
+    ax3d.xaxis.pane.fill = False  
+    ax3d.yaxis.pane.fill =False  
+    ax3d.zaxis.pane.fill = False  
+    ax3d.xaxis.pane.set_edgecolor(BORDER_COL)  
+    ax3d.yaxis.pane.set_edgecolor(BORDER_COL)  
+    ax3d.zaxis.pane.set_edgecolor(BORDER_COL)  
 
-        _style(
-            ax,
-            title_str,
-            subtitle='Each dot = one field pixel | separated chunks = distinct phenotypes',
-            xlabel=xlabel,
-            ylabel=ylabel
-        )
+    
+    ax3d.view_init(elev=25, azim=45)
 
+    
+    ax3d.text2D(0.5, 0.97, 'PC1 × PC2 × PC3',
+                transform=ax3d.transAxes, ha='center', va='top',
+                color=TITLE_COL, fontsize=7.5, fontweight='semibold')
+
+    if n_pc < 3:
+        ax3d.text2D(0.5, 0.02,
+                    f'Only {n_pc} PC(s) available',
+                    transform=ax3d.transAxes, ha='center',
+                    color=CAPTION, fontsize=5.5, fontstyle='italic')
+ 
+ 
+ 
 
 #row 2 
 

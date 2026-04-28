@@ -5,7 +5,7 @@ import os
 import glob
 
 
-FIELD_ID    = 85
+FIELD_ID    = 587
 OUTPUT_PATH = r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
 FIELD_FOLDER = os.path.join(OUTPUT_PATH, f'FID_{FIELD_ID}')
 

@@ -51,34 +51,7 @@ def build_enriched_chip(chip: np.ndarray) -> np.ndarray:
     return np.concatenate([chip, extra], axis=0)
 
 
-#cloud and shadow masking
 
-def make_cloud_shadow_mask(chip: np.ndarray) -> np.ndarray:
-    
-    B2 = chip[0].astype(np.float32)  # Blue
-    B4  =chip[2].astype(np.float32)# Red
-    B8 = chip[3].astype(np.float32)  # NIR
-    B11= chip[4].astype(np.float32)   # SWIR1
-
-    scale= 10_000.0 if chip.max() > 10.0 else 1.0
-
-    cloud_thresh  = 0.20 * scale
-    shadow_nir = 0.12 * scale
-    shadow_swir  = 0.08 * scale
-
-    ndvi = (B8 - B4) / (B8 + B4 + 1e-6)
-    vegetation = ndvi > 0.25
-
-   
-    cloud = (
-        (B2  > cloud_thresh) &
-        (B4  > cloud_thresh) &
-        (B11 > 0.1 * scale) &   
-        (~vegetation)
-    )
-    shadow= (B8 < shadow_nir) & (B11 < shadow_swir) & (~vegetation)
-
-    return (cloud | shadow).astype(np.float32)
 
 
 #temporal composite and cloud handling
@@ -127,12 +100,6 @@ def make_temporal_composite(
     return composite
 
 
-def make_per_date_cloud_masks(chip_temporal: np.ndarray) -> np.ndarray:
-    
-    return np.stack(
-        [make_cloud_shadow_mask(chip_temporal[t]) for t in range(chip_temporal.shape[0])],
-        axis=0,
-    )
 
 
 #display date selection

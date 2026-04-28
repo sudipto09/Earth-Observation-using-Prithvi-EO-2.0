@@ -2,7 +2,6 @@
 main.py
 """
 import os
-from unittest import result
 import numpy as np
 import torch
 import config
@@ -28,10 +27,9 @@ from spectral import (
     select_best_clear_date,
     extract_temporal_ndvi_stats,
 )
-from visualization import ( build_dashboard,
-save_per_date_phenotype_maps,
-)
+from visualization import build_dashboard
 from cloud_mask import make_combined_cloud_mask, scl_coverage_report
+from per_date_clustering import run_per_date_clustering
 
 
 def main() -> None:
@@ -156,13 +154,13 @@ def main() -> None:
     print('  Extracting temporal NDVI statistics...')
     temporal_ndvi_stats = extract_temporal_ndvi_stats(
         chip_temporal = chip_temporal,
-        cloud_masks   = cloud_masks,
-        mask_224      = mask_224_clean,
+        cloud_masks = cloud_masks,
+        mask_224  = mask_224_clean,
     )   
 
     #prithvi encoder 
-    input_tensor  = build_input_tensor(chip_temporal, device)
-    patch_tokens_temporal = extract_patch_tokens(model, input_tensor)  
+    input_tensor= build_input_tensor(chip_temporal, device)
+    patch_tokens_temporal= extract_patch_tokens(model, input_tensor, n_dates=len(used_dates))
 
     # averaged tokens 
     emb_avg = average_patch_tokens(patch_tokens_temporal)              
@@ -210,16 +208,18 @@ def main() -> None:
 
     result.temporal_dates = used_dates
     result.n_dates   = len(used_dates)
-    print("\nGenerating per-date phenotype maps...")
 
-    save_per_date_phenotype_maps(
-    chip_temporal=chip_temporal,
-    cloud_masks=cloud_masks,
-    mask_224=mask_224_clean,
-    used_dates=used_dates,
-    result=result,
-    output_path=os.path.join(config.FIELD_FOLDER, "per_date_maps"),
-)
+    #per-date clustering for temporal vs snapshot comparison
+    print('\nRunning per-date single-date clustering...')
+    run_per_date_clustering(
+        chip_temporal  = chip_temporal,
+        cloud_masks = cloud_masks,
+        field_mask   = mask_224_clean,
+        used_dates= used_dates,
+        temporal_result  = result,
+        output_dir= os.path.join(config.FIELD_FOLDER, 'per_date_clustering'),
+        min_valid_pixels = 200,
+    )
 
     #dashboard
     build_dashboard(

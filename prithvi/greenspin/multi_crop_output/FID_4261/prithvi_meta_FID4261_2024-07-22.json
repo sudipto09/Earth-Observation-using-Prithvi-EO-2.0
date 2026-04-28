@@ -1,0 +1,29 @@
+{
+  "field_id": 4261,
+  "date": "2024-07-22",
+  "x1_px": 448,
+  "y1_px": 438,
+  "win_w_px": 81,
+  "win_h_px": 88,
+  "chip_size": 224,
+  "source_gt": [
+    580140.0,
+    20.0,
+    0.0,
+    5500020.0,
+    0.0,
+    -20.0
+  ],
+  "chip_gt": [
+    589100.0,
+    7.232142857142857,
+    0,
+    5491260.0,
+    0,
+    -7.857142857142857
+  ],
+  "crs_wkt": "PROJCS[\"WGS 84 / UTM zone 32N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",9],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32632\"]]",
+  "resamp_px_m": 7.232142857142857,
+  "field_patches": 12,
+  "scl_saved": true
+}
