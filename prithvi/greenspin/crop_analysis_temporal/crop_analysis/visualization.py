@@ -4,6 +4,11 @@ visualization.py
 Builds a 5-row analysis dashboard for the Prithvi crop-zone pipeline.
 
 """
+from ast import Add
+from logging import config
+from unittest import result
+from unittest import result
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -238,40 +243,87 @@ def _panel_bic_curve(ax, result: ClusterResult):
 def _panel_pca_scatter(ax, result: ClusterResult):
     
     colours = [_zone_color(l) for l in result.pixel_labels]
-    two_d = result.field_pca.shape[1] >= 2
 
-    if two_d:
-        ax.scatter(result.field_pca[:, 0], result.field_pca[:, 1],
-                   c=colours, alpha=0.50, s=10, edgecolors='none', rasterized=True)
-        xlabel, ylabel = 'PC 1', 'PC 2'
-        title_str = 'Feature Space - PCA'
+    
+    three_d = result.field_pca.shape[1] >= 3
+
+    if three_d:
+        # Convert existing axis into 3D axis
+        fig = ax.figure
+        pos = ax.get_position()
+        ax.remove()
+        ax = fig.add_axes(pos, projection='3d')
+
+        ax.scatter(
+            result.field_pca[:, 0],   # PC1
+            result.field_pca[:, 1],   # PC2
+            result.field_pca[:, 2],   # PC3
+            c=colours,
+            alpha=0.50,
+            s=10,
+            edgecolors='none',
+            rasterized=True
+        )
+
+        ax.set_xlabel('PC 1', color=LABEL_COL, fontsize=7.5)
+        ax.set_ylabel('PC 2', color=LABEL_COL, fontsize=7.5)
+        ax.set_zlabel('PC 3', color=LABEL_COL, fontsize=7.5)
+
+        ax.set_title(
+            'Feature Space - PCA (3D)',
+            color=TITLE_COL,
+            fontsize=9,
+            pad=12,
+            fontweight='semibold'
+        )
+
     else:
-        rng= np.random.default_rng(0)
-        jitter =rng.uniform(-0.3, 0.3, len(result.pixel_labels))
-        ax.scatter(result.field_pca[:, 0], jitter,
-                   c=colours, alpha=0.50, s=10, edgecolors='none', rasterized=True)
+        rng = np.random.default_rng(0)
+        jitter = rng.uniform(-0.3, 0.3, len(result.pixel_labels))
+
+        ax.scatter(
+            result.field_pca[:, 0],
+            jitter,
+            c=colours,
+            alpha=0.50,
+            s=10,
+            edgecolors='none',
+            rasterized=True
+        )
+
         xlabel, ylabel = 'PC 1', 'Jitter'
-        title_str = 'Feature Space  (PC1)'
+        title_str = 'Feature Space (PC1)'
 
-    unique_labels = np.unique(result.pixel_labels)
+        ax.legend(
+            handles=[
+                Patch(
+                    facecolor=_zone_color(i),
+                    label=result.crop_names[i][:28]
+                    if len(result.crop_names[i]) > 28
+                    else result.crop_names[i]
+                )
+                for i in np.unique(result.pixel_labels)
+            ],
+            fontsize=6.5,
+            facecolor=BG_PANEL,
+            edgecolor=BORDER_COL,
+            labelcolor=LABEL_COL,
+            loc='center left',
+            bbox_to_anchor=(1.02, 0.5),
+            framealpha=0.85,
+            handlelength=1.2
+        )
 
-    handles = [
-        Patch(facecolor=_zone_color(i),
-              label=result.crop_names[i][:28] if len(result.crop_names[i]) > 28
-              else result.crop_names[i])
-        for i in unique_labels
-    ]
-    
-    ax.legend(handles=handles, fontsize=6.5, facecolor=BG_PANEL,
-              edgecolor=BORDER_COL, labelcolor=LABEL_COL,
-              loc='center left',bbox_to_anchor= (1.02, 0.5), framealpha=0.85, handlelength=1.2)
-    
-    
-    
-    ax.grid(True, color=GRID_COL, linestyle='--', linewidth=0.5, alpha=0.8)
-    _style(ax, title_str,
-           subtitle='Each dot = one field pixel | separated chunks = distinct phenotypes',
-           xlabel=xlabel, ylabel=ylabel)
+        ax.grid(True, color=GRID_COL, linestyle='--',
+                linewidth=0.5, alpha=0.8)
+
+        _style(
+            ax,
+            title_str,
+            subtitle='Each dot = one field pixel | separated chunks = distinct phenotypes',
+            xlabel=xlabel,
+            ylabel=ylabel
+        )
 
 
 #row 2 
@@ -646,6 +698,153 @@ def _panel_pipeline(ax, chip, chip_enriched, mask_clean, emb_pixels, result, dev
                 fontsize=7.2, va='center', fontfamily='monospace')
         ax.text(0.38, y, val,       color=LABEL_COL,
                 fontsize=7.2, va='center', fontfamily='monospace')
+
+
+
+import os
+
+
+def save_per_date_phenotype_maps(
+    chip_temporal: np.ndarray,
+    cloud_masks: np.ndarray,
+    mask_224: np.ndarray,
+    used_dates: list,
+    result: ClusterResult,
+    output_path: str,
+):
+    """
+    Save one phenotype map per date.
+
+    Each map shows:
+    - true colour RGB for that date (left panel)
+    - field boundary
+    - cloud-free valid pixels coloured by phenotype (right panel)
+    - hatched overlay where clouds/shadows mask the field
+    - phenotype labels from result.crop_names
+
+    Total output: 1 PNG per date
+    Example:
+        phenotype_map_2024-04-15.png
+    """
+    from spectral import norm as _norm
+
+    os.makedirs(output_path, exist_ok=True)
+
+    n_clusters = result.optimal_n
+
+    clrs_panel = [BG_PANEL] + [_zone_color(i) for i in range(n_clusters)]
+    cmap_panel = ListedColormap(clrs_panel)
+    bnorm = BoundaryNorm(np.arange(-1.5, n_clusters + 0.5, 1), len(clrs_panel))
+
+    for t, date_str in enumerate(used_dates):
+        cloud_t      = cloud_masks[t]
+        valid_field  = (cloud_t == 0) & (mask_224 == 1)
+        cloudy_field = (cloud_t == 1) & (mask_224 == 1)
+
+        cloud_pct = float(cloudy_field.sum()) / max(int(mask_224.sum()), 1) * 100
+
+        # keep phenotype only for clean field pixels
+        date_map = np.full_like(result.pixel_cluster_map, -1)
+        date_map[valid_field] = result.pixel_cluster_map[valid_field]
+
+        # RGB for this date
+        chip_t = chip_temporal[t]
+        rgb_t = np.stack(
+            [_norm(chip_t[2]), _norm(chip_t[1]), _norm(chip_t[0])],
+            axis=-1,
+        )
+
+        fig, axes = plt.subplots(
+            1, 2, figsize=(14, 7),
+            facecolor=BG_DARK,
+            gridspec_kw={'wspace': 0.06},
+        )
+
+        # --- left: true colour ---
+        ax_rgb = axes[0]
+        ax_rgb.imshow(rgb_t)
+        ax_rgb.set_xticks([]); ax_rgb.set_yticks([])
+        _draw_field_boundary(ax_rgb, mask_224)
+        _field_zoom(ax_rgb, mask_224)
+        _style(ax_rgb, f'True Colour  –  {date_str}', subtitle='B4 · B3 · B2')
+
+        if cloudy_field.any():
+            ax_rgb.contourf(
+                cloudy_field.astype(float),
+                levels=[0.5, 1.5],
+                hatches=['////'],
+                colors='none',
+                alpha=0.0,
+            )
+
+        # --- right: phenotype map ---
+        ax_ph = axes[1]
+        ax_ph.imshow(date_map, cmap=cmap_panel, norm=bnorm, interpolation='nearest')
+        ax_ph.set_facecolor(BG_DARK)
+        ax_ph.set_xticks([]); ax_ph.set_yticks([])
+        _draw_field_boundary(ax_ph, mask_224)
+        _field_zoom(ax_ph, mask_224)
+
+        if cloudy_field.any():
+            ax_ph.contourf(
+                cloudy_field.astype(float),
+                levels=[0.5, 1.5],
+                hatches=['////'],
+                colors=['#555555'],
+                alpha=0.35,
+            )
+
+        coverage_label = (
+            f'Cloud/shadow: {cloud_pct:.0f}% of field masked'
+            if cloud_pct > 1
+            else 'Cloud-free'
+        )
+        ax_ph.text(
+            0.02, 0.02, coverage_label,
+            transform=ax_ph.transAxes,
+            color=GOLD if cloud_pct > 30 else '#2ecc71',
+            fontsize=7.5, va='bottom', fontstyle='italic',
+        )
+
+        legend_handles = [
+            Patch(
+                facecolor=_zone_color(i),
+                label=result.crop_names[i] if i < len(result.crop_names) else f'Phenotype {i}',
+                edgecolor='none',
+            )
+            for i in range(n_clusters)
+        ]
+        legend_handles.append(
+            Patch(facecolor='#555555', label='Cloud / shadow', edgecolor='none', alpha=0.6)
+        )
+        legend_handles.append(
+            Patch(facecolor=BG_PANEL, label='Outside field', edgecolor=BORDER_COL, linewidth=0.5)
+        )
+        ax_ph.legend(
+            handles=legend_handles,
+            loc='upper right',
+            fontsize=7.5,
+            facecolor=BG_PANEL,
+            edgecolor=BORDER_COL,
+            labelcolor=LABEL_COL,
+            framealpha=0.9,
+        )
+        _style(ax_ph, f'Phenotype Map  –  {date_str}',
+               subtitle=f'Zones from full temporal clustering  |  {int(valid_field.sum())} clean field pixels')
+
+        fig.suptitle(
+            f'Field {FIELD_ID}  ·  {date_str}  ·  '
+            f'{n_clusters} phenotype{"s" if n_clusters != 1 else ""}',
+            fontsize=11, color=TITLE_COL, fontweight='bold', y=1.01,
+        )
+
+        save_path = os.path.join(output_path, f'phenotype_map_{date_str}.png')
+        plt.savefig(save_path, dpi=150, bbox_inches='tight',
+                    facecolor=BG_DARK, edgecolor='none')
+        plt.close(fig)
+
+        print(f"Saved: {save_path}")
+
 
 
 #main function to build the dashboard

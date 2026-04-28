@@ -2,6 +2,7 @@
 main.py
 """
 import os
+from unittest import result
 import numpy as np
 import torch
 import config
@@ -27,7 +28,9 @@ from spectral import (
     select_best_clear_date,
     extract_temporal_ndvi_stats,
 )
-from visualization import build_dashboard
+from visualization import ( build_dashboard,
+save_per_date_phenotype_maps,
+)
 from cloud_mask import make_combined_cloud_mask, scl_coverage_report
 
 
@@ -207,6 +210,16 @@ def main() -> None:
 
     result.temporal_dates = used_dates
     result.n_dates   = len(used_dates)
+    print("\nGenerating per-date phenotype maps...")
+
+    save_per_date_phenotype_maps(
+    chip_temporal=chip_temporal,
+    cloud_masks=cloud_masks,
+    mask_224=mask_224_clean,
+    used_dates=used_dates,
+    result=result,
+    output_path=os.path.join(config.FIELD_FOLDER, "per_date_maps"),
+)
 
     #dashboard
     build_dashboard(

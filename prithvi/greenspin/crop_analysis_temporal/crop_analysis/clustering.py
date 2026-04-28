@@ -61,12 +61,13 @@ class ClusterResult:
 def _select_optimal_n(
     field_pca: np.ndarray,
     effective_max: int = MAX_CLUSTERS,
+    min_n: int = MIN_CLUSTERS,
 ) -> tuple[int, list[int], list[float]]:
 
     n_samples = field_pca.shape[0]
     max_feasible = min(effective_max, n_samples // 5)
-    upper = max(max_feasible, MIN_CLUSTERS)
-    n_range = list(range(MIN_CLUSTERS, upper + 1))
+    upper = max(max_feasible, min_n)
+    n_range = list(range(min_n, upper + 1))
 
     bic_scores: list[float] = []
     for n in n_range:
@@ -139,6 +140,21 @@ def run_clustering(
     pca = PCA(n_components=n_components, random_state=RANDOM_SEED)
     field_pca = pca.fit_transform(field_combined)
 
+    #pre-BIC bimodality check
+    # if per-pixel mean NDVI (temporal_stats col 0 = mean_ndvi) has a large
+    # interquartile spread the field contains genuinely different land-cover
+    # types (e.g. bare soil vs crop). Force BIC to consider at least 2 clusters
+    # so embedding dominance cannot collapse them into 1.
+    BIMODAL_IQR_THRESH = 0.20   # IQR gap above this → force min 2 clusters
+    forced_min = MIN_CLUSTERS
+    if temporal_stats is not None:
+        ts_field_pre = temporal_stats[field_mask_flat]   # (n_samples, n_dims)
+        field_mean_ndvi = ts_field_pre[:, 0]             # col 0 = mean NDVI per pixel
+        ndvi_p25 = float(np.percentile(field_mean_ndvi, 25))
+        ndvi_p75 = float(np.percentile(field_mean_ndvi, 75))
+        if (ndvi_p75 - ndvi_p25) > BIMODAL_IQR_THRESH:
+            forced_min = max(MIN_CLUSTERS, 2)
+
     #gmm with BIC
     if n_samples < 5:
         pixel_labels= np.zeros(n_samples, dtype=int)
@@ -161,7 +177,9 @@ def run_clustering(
         bic_scores= [float(gmm.bic(field_pca))]
 
     else:
-        optimal_n, bic_n_range, bic_scores = _select_optimal_n(field_pca, effective_max)
+        optimal_n, bic_n_range, bic_scores = _select_optimal_n(
+            field_pca, effective_max, min_n=forced_min,
+        )
 
         gmm_final= GaussianMixture(
             n_components= optimal_n,
@@ -173,6 +191,13 @@ def run_clustering(
         gmm_final.fit(field_pca)
         pixel_labels = gmm_final.predict(field_pca)
         confidence = gmm_final.predict_proba(field_pca).max(axis=1)
+
+        # remap labels to 0..k-1 with no gaps (GMM can produce empty components)
+        unique_labels = np.unique(pixel_labels)
+        if len(unique_labels) < optimal_n:
+            remap = {old: new for new, old in enumerate(unique_labels)}
+            pixel_labels = np.array([remap[l] for l in pixel_labels], dtype=int)
+            optimal_n = len(unique_labels)
 
     # maps results back to pixel space
     # -1 = outside field (matches BoundaryNorm sentinel in visualization)
@@ -204,23 +229,7 @@ def run_clustering(
             cluster_conf_avg.append(0.0)
     cluster_pct = [c / len(pixel_labels) * 100 for c in cluster_counts]
 
-    
-    MEANINGFUL_NDVI_SPREAD = 0.05
     ndvi_diff = float(max(cluster_ndvi_avg) - min(cluster_ndvi_avg))
-    if ndvi_diff < MEANINGFUL_NDVI_SPREAD and optimal_n > 1:
-
-        pixel_labels  = np.zeros(n_samples, dtype=int)
-        confidence  = np.ones(n_samples)
-        
-        pixel_cluster_map = np.where(mask_224 > 0, 0, -1).astype(int)
-        optimal_n   = 1
-
-        cluster_counts= [n_samples]
-        cluster_ndvi_avg = [float(np.mean(field_ndvi))]
-        cluster_ndvi_std = [float(np.std(field_ndvi))]
-        cluster_conf_avg = [1.0]
-        cluster_pct    = [100.0]
-        ndvi_diff   = 0.0
 
     #cluster quality validation
     if optimal_n > 1 and n_samples > optimal_n:
@@ -234,6 +243,77 @@ def run_clustering(
     else:
         sil = 1.0    
         db  = 0.0
+
+    #trajectory-correlation merge
+    # Merge a pair of clusters only when BOTH conditions hold:
+    #   1. their temporal trajectories are nearly identical (high correlation)
+    #   2. their mean NDVI levels are close (small absolute difference)
+    # Condition 2 is critical: two flat trajectories at very different NDVI
+    # levels (e.g. bare soil vs crop) correlate near 1.0 but are genuinely
+    # distinct land-cover types and must NOT be merged.
+    TRAJ_CORR_THRESH  = 0.97   # trajectory shape similarity
+    NDVI_MERGE_MAX    = 0.10   # max allowed absolute NDVI difference to merge
+
+    def _rebuild_stats(labels, n, ndvi_vals, conf_vals):
+        counts, avgs, stds, confs = [], [], [], []
+        for i in range(n):
+            sel = labels == i
+            counts.append(int(sel.sum()))
+            if sel.any():
+                avgs.append(float(np.mean(ndvi_vals[sel])))
+                stds.append(float(np.std(ndvi_vals[sel])))
+                confs.append(float(np.mean(conf_vals[sel])))
+            else:
+                avgs.append(0.0); stds.append(0.0); confs.append(0.0)
+        pcts = [c / max(len(labels), 1) * 100 for c in counts]
+        return counts, avgs, stds, confs, pcts
+
+    if optimal_n > 1 and temporal_stats is not None:
+        ts_field = temporal_stats[field_mask_flat]       # (n_samples, n_dims)
+        do_merge = True
+        while do_merge and optimal_n > 1:
+            do_merge = False
+
+            cluster_ts = np.array([
+                ts_field[pixel_labels == i].mean(axis=0)
+                if (pixel_labels == i).any()
+                else np.zeros(ts_field.shape[1])
+                for i in range(optimal_n)
+            ])                                           # (optimal_n, n_dims)
+
+            best_pair = None
+            best_r    = -1.0
+            for i in range(optimal_n):
+                for j in range(i + 1, optimal_n):
+                    # guard: only consider merging if NDVI levels are close
+                    ndvi_dist = abs(cluster_ndvi_avg[i] - cluster_ndvi_avg[j])
+                    if ndvi_dist >= NDVI_MERGE_MAX:
+                        continue                        # different land cover → never merge
+
+                    vi, vj = cluster_ts[i], cluster_ts[j]
+                    denom  = np.std(vi) * np.std(vj)
+                    if denom < 1e-9:
+                        r = 1.0 if ndvi_dist < NDVI_MERGE_MAX else -1.0
+                    else:
+                        r = float(np.corrcoef(vi, vj)[0, 1])
+                    if r > best_r:
+                        best_r, best_pair = r, (i, j)
+
+            if best_r >= TRAJ_CORR_THRESH and best_pair is not None:
+                i_keep, i_drop = best_pair
+                pixel_labels[pixel_labels == i_drop] = i_keep
+                pixel_labels[pixel_labels > i_drop] -= 1
+                optimal_n -= 1
+
+                pixel_cluster_map = np.full(H * W, -1, dtype=int)
+                pixel_cluster_map[field_mask_flat] = pixel_labels
+                pixel_cluster_map = pixel_cluster_map.reshape(H, W)
+
+                cluster_counts, cluster_ndvi_avg, cluster_ndvi_std, \
+                    cluster_conf_avg, cluster_pct = _rebuild_stats(
+                        pixel_labels, optimal_n, field_ndvi, confidence)
+                ndvi_diff = float(max(cluster_ndvi_avg) - min(cluster_ndvi_avg))
+                do_merge  = True
 
     #phenotype naming by NDVI rank
     ndvi_order = list(np.argsort(cluster_ndvi_avg)[::-1])    # 0 = highest NDVI

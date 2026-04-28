@@ -22,7 +22,7 @@ DATE_FOLDERS = [
     "2024-09-15",
 ]
 
-PATCH_ID    = '32UPA_0_4'
+PATCH_ID    = '32UNV_4_0'
 BASE_PATH   = r'Y:\14_Zuckerrübe\Sentinel_2\wue'
 OUTPUT_PATH = r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
 
