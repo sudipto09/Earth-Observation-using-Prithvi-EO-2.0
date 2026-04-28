@@ -1,4 +1,4 @@
-````markdown
+
 # Earth Observation using Prithvi EO 2.0
 
 ### Temporal Crop Analysis & Multi-Cropping Detection with Foundation Models
@@ -364,5 +364,5 @@ University of Würzburg
 If you like this project,
 give it a ⭐ and feel free to contribute!
 
-```
-```
+
+
