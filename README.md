@@ -501,7 +501,6 @@ MSc Aerospace Informatics
 University of Würzburg
 
 ---
-
 If you like this project, give it a ⭐ 
 
 ```
