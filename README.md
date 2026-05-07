@@ -1,4 +1,4 @@
-````markdown id="l8q2wa"
+
 # Earth Observation using Prithvi EO 2.0
 
 ### Temporal Crop Analysis & Multi-Cropping Detection with Foundation Models
