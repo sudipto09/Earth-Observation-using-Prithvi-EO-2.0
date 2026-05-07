@@ -1,4 +1,4 @@
-
+````markdown id="l8q2wa"
 # Earth Observation using Prithvi EO 2.0
 
 ### Temporal Crop Analysis & Multi-Cropping Detection with Foundation Models
@@ -6,6 +6,15 @@
 This project builds a **full temporal Earth Observation pipeline** using **Prithvi EO 2.0 + spectral features + temporal statistics + unsupervised learning** to analyze **intra-field crop variability (multi-cropping / stress zones)**.
 
 The main objective is to detect and understand **multi-cropping patterns within agricultural fields**, identify crop variability, and analyze field-level growth behavior across time using satellite imagery and foundation model embeddings.
+
+The pipeline is designed for:
+
+- Temporal crop behavior analysis
+- Multi-cropping detection
+- Phenotype discovery inside fields
+- Agricultural field screening at scale
+- Temporal consistency analysis
+- Interpretable agricultural AI workflows
 
 ---
 
@@ -24,6 +33,14 @@ Phenotype-based field analysis (instead of simple clusters)
 Temporal NDVI trajectory visualization
 
 Per-date clustering analysis
+
+Batch field processing pipeline
+
+Field-level screening & ranking
+
+CSV-based summaries and reports
+
+Custom dashboard visualization system
 
 Strong interpretability + confidence estimation
 
@@ -46,10 +63,14 @@ to identify **hidden patterns inside fields**, such as:
 * Growth differences
 * Stress zones
 * Temporal crop behavior changes
+* Stable vs unstable phenotypes
+* Seasonal transitions
 
 ---
 
-## Sample Output (Temporal Dashboard)
+## Sample Outputs
+
+### Temporal Dashboard
 
 ![Temporal Dashboard](prithvi/greenspin/multi_crop_output/FID_2701/prithvi_dashboard_v2_Temporal.png)
 
@@ -65,6 +86,35 @@ to identify **hidden patterns inside fields**, such as:
 * Mean NDVI per phenotype
 * Temporal NDVI trajectories (37 dates)
 * Final field summary
+
+---
+
+### Per-Date Phenotype Grid
+
+![Per Date Dashboard](ADD_PATH_TO_FIELD_207_GRID_IMAGE)
+
+This dashboard visualizes:
+
+* Phenotype maps for each individual date
+* Temporal evolution of field structure
+* Cluster consistency across the season
+* Seasonal transitions and growth behavior
+* Date-wise cluster separability
+
+---
+
+### Batch Screening Summary
+
+![Batch Summary](ADD_PATH_TO_BATCH_SUMMARY_IMAGE)
+
+Batch analysis includes:
+
+* Field-level ranking
+* Multi-cropping likelihood
+* Cluster statistics
+* NDVI separability
+* Temporal consistency scores
+* Field screening summaries
 
 ---
 
@@ -100,6 +150,8 @@ Per-Date Clustering Validation
         ↓
 Temporal Analysis + Visualization
         ↓
+Batch Screening + CSV Reports
+        ↓
 Dashboard + GeoTIFF Export
 ````
 
@@ -109,18 +161,33 @@ Dashboard + GeoTIFF Export
 
 ```bash
 .
-├── main.py                    # Full temporal pipeline execution
-├── config.py                  # Field + temporal configuration
-├── data_loader.py             # Loads temporal chips, masks, metadata
+├── main.py                    # Main temporal analysis pipeline
+├── start.py                   # Entry script
+├── batch_pipeline.py          # Batch processing across multiple fields
+├── full_pipeline_only.py      # Full pipeline execution mode
+├── screening.py               # Field screening & ranking
+├── field_classifier.py        # Field-level classification logic
+│
+├── config.py                  # Configuration and parameters
+├── data_loader.py             # Temporal chip & metadata loading
+├── extractors.py              # Feature extraction utilities
+├── metrics.py                 # Clustering & evaluation metrics
+│
 ├── cloud_mask.py              # SCL + spectral cloud masking
-├── spectral.py                # NDVI, indices, temporal composite
-├── encoder.py                 # Prithvi embedding + temporal statistics
-├── clustering.py              # PCA + GMM + BIC + validation
-├── per_date_clustering.py     # Per-date clustering consistency analysis
-├── visualization.py           # Multi-panel temporal dashboard
+├── spectral.py                # Spectral indices & composites
+├── encoder.py                 # Prithvi embeddings + temporal stats
+├── clustering.py              # PCA + GMM + BIC clustering
+├── per_date_clustering.py     # Per-date clustering analysis
+│
+├── visualization.py           # Dashboard generation
+├── panels.py                  # Visualization panel components
+├── theme.py                   # Dashboard styling & themes
+├── batch_report.py            # Batch report & CSV generation
+│
 ├── export.py                  # GeoTIFF export
-├── modelfactory.py            # Prithvi model loading (local weights)
-├── qgis_chip_extractor.py     # Sentinel-2 chip extraction from QGIS
+├── modelfactory.py            # Prithvi model loading
+├── qgis_chip_extractor.py     # Sentinel-2 chip extraction (QGIS)
+└── __init__.py
 ```
 
 ---
@@ -180,6 +247,7 @@ These embeddings serve as the deep feature backbone of the project.
 * Growth patterns across the season
 * Embedding variability over time
 * Temporal stability analysis
+* Per-date feature consistency
 
 This helps distinguish crop behavior beyond what a single image can show.
 
@@ -202,6 +270,7 @@ Embeddings + Temporal + Spectral + Spatial
   * Silhouette score
   * Davies-Bouldin index
   * Cluster confidence estimation
+  * Temporal consistency scoring
 
 This creates a fully adaptive and robust clustering pipeline.
 
@@ -229,8 +298,42 @@ The system also performs clustering across individual dates to validate:
 * temporal consistency
 * cluster stability
 * seasonal crop transitions
+* temporal separability
 
 This helps verify whether patterns remain stable or change significantly over time.
+
+---
+
+### Batch Screening Pipeline
+
+The project now supports large-scale field analysis through batch processing.
+
+Features include:
+
+* Automated processing of multiple fields
+* Summary CSV generation
+* Multi-cropping ranking
+* Field-level phenotype comparison
+* Statistical screening metrics
+* Batch dashboard generation
+
+This enables scalable agricultural monitoring workflows.
+
+---
+
+### Visualization System
+
+The visualization pipeline is modular and dashboard-oriented.
+
+Features include:
+
+* Multi-panel dashboard layouts
+* Phenotype comparison panels
+* Temporal trajectory visualization
+* Cluster confidence visualization
+* Batch summary dashboards
+* Per-date phenotype grids
+* Consistent dashboard styling system
 
 ---
 
@@ -241,6 +344,7 @@ Tracks:
 * NDVI evolution over time
 * Growth differences between zones
 * Phenotype-specific crop trajectories
+* Temporal consistency of clusters
 
 Key insight:
 
@@ -274,6 +378,8 @@ The system can detect:
 * **Growth differences over time**
 * **Weak vs strong spectral separation**
 * **Phenotype consistency across dates**
+* **Temporal crop transitions**
+* **Potential abnormal growth behavior**
 
 Example outputs:
 
@@ -282,6 +388,9 @@ Example outputs:
 * Confidence scores
 * Temporal NDVI curves
 * Seasonal growth comparisons
+* Batch screening rankings
+* Field summary CSV reports
+* Per-date phenotype evolution
 
 ---
 
@@ -306,14 +415,42 @@ PATCH_GRID = 14
 ### 1. Install dependencies
 
 ```bash
-pip install numpy torch scikit-learn matplotlib rasterio
+pip install numpy torch scikit-learn matplotlib rasterio pandas
 ```
 
-### 2. Run pipeline
+### 2. Run single-field pipeline
 
 ```bash
 python main.py
 ```
+
+### 3. Run batch field processing
+
+```bash
+python batch_pipeline.py
+```
+
+### 4. Generate reports
+
+```bash
+python batch_report.py
+```
+
+---
+
+## Generated Outputs
+
+The pipeline generates:
+
+* Temporal analysis dashboards
+* Per-date phenotype grids
+* Batch screening visualizations
+* GeoTIFF exports
+* CSV summaries
+* Cluster statistics
+* Temporal trajectory analysis
+* Field ranking reports
+* Phenotype consistency analysis
 
 ---
 
@@ -329,6 +466,8 @@ python main.py
 * Temporal crop behavior modeling
 * GIS-compatible outputs
 * Multi-cropping detection pipeline
+* Batch-scale agricultural field screening
+* Modular visualization & reporting system
 
 ---
 
@@ -340,6 +479,8 @@ python main.py
 * Real-time monitoring system
 * Streamlit dashboard deployment
 * Integration with precision agriculture decision systems
+* Temporal anomaly detection
+* Interactive GIS visualization
 
 ---
 
@@ -361,8 +502,7 @@ University of Würzburg
 
 ---
 
-If you like this project,
-give it a ⭐ and feel free to contribute!
+If you like this project, give it a ⭐ 
 
-
-
+```
+```
