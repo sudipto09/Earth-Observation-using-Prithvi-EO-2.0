@@ -1,5 +1,10 @@
 """
 main.py
+
+Single-field entry point for development and debugging. Runs the complete
+pipeline for config.FIELD_ID with full console output. For batch processing
+of many fields use screening.py / batch_pipeline.py instead.
+
 """
 import os
 import numpy as np

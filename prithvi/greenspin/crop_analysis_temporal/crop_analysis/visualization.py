@@ -4,6 +4,7 @@ visualization.py
 Builds a 5-row analysis dashboard for the Prithvi crop-zone pipeline.
 
 """
+import config
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -11,6 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Patch
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from clustering import ClusterResult
+from config import DATES, PATCH_GRID
 from config import FIELD_ID, DATES, PATCH_GRID
 from encoder import make_patch_mask
 
@@ -853,7 +855,7 @@ def save_per_date_phenotype_maps(
                subtitle=f'Zones from full temporal clustering  |  {int(valid_field.sum())} clean field pixels')
 
         fig.suptitle(
-            f'Field {FIELD_ID}  ·  {date_str}  ·  '
+            f'Field {config.FIELD_ID}  ·  {date_str}  ·  '
             f'{n_clusters} phenotype{"s" if n_clusters != 1 else ""}',
             fontsize=11, color=TITLE_COL, fontweight='bold', y=1.01,
         )
@@ -890,8 +892,9 @@ def build_dashboard(
     t_label = f'Temporal Stack ({n_dates} Dates)  ·  ' if n_dates else ''
 
     fig = plt.figure(figsize=(22, 24), facecolor=BG_DARK)
+    fig = plt.figure(figsize=(22, 24), facecolor=BG_DARK)
     fig.suptitle(
-        f'Prithvi-EO 2.0  |  Field {FIELD_ID}  |  {t_label}'
+        f'Prithvi-EO 2.0  |  Field {config.FIELD_ID}  |  {t_label}'
         f'GMM + PCA + BIC',
         fontsize=13, color='white', fontweight='bold', y=0.975,
     )

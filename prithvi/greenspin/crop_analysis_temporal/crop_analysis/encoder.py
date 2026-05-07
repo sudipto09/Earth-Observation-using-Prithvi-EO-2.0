@@ -1,6 +1,11 @@
 """
 encoder.py
 
+Interfaces with the Prithvi-EO Vision Transformer encoder. Extracts (T, 196, 1024)
+patch tokens, computes temporal embedding statistics (mean/std/range over time),
+and upsamples patch embeddings to pixel resolution for clustering.
+
+
 """
 import numpy as np
 import torch

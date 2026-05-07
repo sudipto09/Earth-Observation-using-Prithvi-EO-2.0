@@ -1,5 +1,11 @@
 """
 clustering.py
+
+Core BIC-optimal GMM phenotype clustering. Fuses Prithvi embeddings, temporal
+NDVI statistics, spectral features, and spatial coordinates into one feature matrix,
+then runs PCA whitening, GMM model selection, trajectory-based cluster merging,
+and phenotype naming. Returns a ClusterResult dataclass with all outputs.
+
 """
 from dataclasses import dataclass, field
 import numpy as np
@@ -196,7 +202,7 @@ def run_clustering(
         pixel_labels = gmm_final.predict(field_pca)
         confidence = gmm_final.predict_proba(field_pca).max(axis=1)
 
-        # remap labels to 0..k-1 with no gaps (GMM can produce empty components)
+        # remap labels 
         unique_labels = np.unique(pixel_labels)
         if len(unique_labels) < optimal_n:
             remap = {old: new for new, old in enumerate(unique_labels)}
@@ -204,7 +210,7 @@ def run_clustering(
             optimal_n = len(unique_labels)
 
     # maps results back to pixel space
-    # -1 = outside field (matches BoundaryNorm sentinel in visualization)
+   
     pixel_cluster_map = np.full(H * W, -1, dtype=int)
     pixel_cluster_map[field_mask_flat] = pixel_labels
     pixel_cluster_map  = pixel_cluster_map.reshape(H, W)
@@ -235,28 +241,9 @@ def run_clustering(
 
     ndvi_diff = float(max(cluster_ndvi_avg) - min(cluster_ndvi_avg))
 
-    #cluster quality validation
-    if optimal_n > 1 and n_samples > optimal_n:
-        
-        sample_size = min(5000, n_samples)
-        sil = float(silhouette_score(
-            field_pca, pixel_labels,
-            sample_size=sample_size, random_state=RANDOM_SEED,
-        ))
-        db=float(davies_bouldin_score(field_pca, pixel_labels))
-    else:
-        sil = 1.0    
-        db  = 0.0
-
-    #trajectory-correlation merge
-    # Merge a pair of clusters only when BOTH conditions hold:
-    #   1. their temporal trajectories are nearly identical (high correlation)
-    #   2. their mean NDVI levels are close (small absolute difference)
-    # Condition 2 is critical: two flat trajectories at very different NDVI
-    # levels (e.g. bare soil vs crop) correlate near 1.0 but are genuinely
-    # distinct land-cover types and must NOT be merged.
-    TRAJ_CORR_THRESH  = 0.97   # trajectory shape similarity
-    NDVI_MERGE_MAX    = 0.10   # max allowed absolute NDVI difference to merge
+  
+    TRAJ_CORR_THRESH  = 0.97   
+    NDVI_MERGE_MAX    = 0.10   
 
     def _rebuild_stats(labels, n, ndvi_vals, conf_vals):
         counts, avgs, stds, confs = [], [], [], []
@@ -289,10 +276,10 @@ def run_clustering(
             best_r    = -1.0
             for i in range(optimal_n):
                 for j in range(i + 1, optimal_n):
-                    # guard: only consider merging if NDVI levels are close
+                    
                     ndvi_dist = abs(cluster_ndvi_avg[i] - cluster_ndvi_avg[j])
                     if ndvi_dist >= NDVI_MERGE_MAX:
-                        continue                        # different land cover → never merge
+                        continue                        
 
                     vi, vj = cluster_ts[i], cluster_ts[j]
                     denom  = np.std(vi) * np.std(vj)
@@ -318,6 +305,18 @@ def run_clustering(
                         pixel_labels, optimal_n, field_ndvi, confidence)
                 ndvi_diff = float(max(cluster_ndvi_avg) - min(cluster_ndvi_avg))
                 do_merge  = True
+
+    
+    if optimal_n > 1 and n_samples > optimal_n:
+        sample_size = min(5000, n_samples)
+        sil = float(silhouette_score(
+            field_pca, pixel_labels,
+            sample_size=sample_size, random_state=RANDOM_SEED,
+        ))
+        db = float(davies_bouldin_score(field_pca, pixel_labels))
+    else:
+        sil = float('nan')
+        db  = 0.0
 
     #phenotype naming by NDVI rank
     ndvi_order = list(np.argsort(cluster_ndvi_avg)[::-1])    # 0 = highest NDVI

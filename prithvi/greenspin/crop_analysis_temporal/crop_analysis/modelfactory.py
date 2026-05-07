@@ -1,3 +1,11 @@
+"""
+modelfactory.py
+
+Loads Prithvi-EO-2.0-300M-TL weights from the prithvi_300m_tl/ folder.
+Handles positional-embedding interpolation when the number of input dates
+differs from the checkpoint. Returns (model, decoder) both in eval() mode.
+"""
+
 import torch
 from torch import nn
 from pathlib import Path

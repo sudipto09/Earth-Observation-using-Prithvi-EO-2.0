@@ -1,5 +1,10 @@
 """
 cloud_mask.py
+
+Generates per-pixel binary cloud/shadow masks for Sentinel-2 chips.
+Combines Sentinel-2 SCL class filtering with a spectral heuristic fallback.
+Main entry point: make_combined_cloud_mask(chip, scl). Returns float32 mask, 1=cloud.
+
 """
 from __future__ import annotations
 import numpy as np

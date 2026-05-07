@@ -1,20 +1,28 @@
 """
 config.py
+
+Central configuration - edit this file before running any pipeline script.
+Controls: FIELD_ID, OUTPUT_PATH, DATES list, clustering hyperparameters,
+cloud-mask flags, and all path-construction helpers (chip_path, tif_path, etc.).
+
 """
 import os
 import glob
 
 
-FIELD_ID    = 587
+
+
+FIELD_ID =   587
 OUTPUT_PATH = r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
 FIELD_FOLDER = os.path.join(OUTPUT_PATH, f'FID_{FIELD_ID}')
 
 
 DATES = [
-    '2024-04-08', '2024-04-23', '2024-04-30','2024-05-10', '2024-05-13', '2024-05-20','2024-05-23', '2024-05-28', '2024-05-30',
+   # '2024-04-08', '2024-04-23', '2024-04-30','2024-05-10', '2024-05-13', '2024-05-20','2024-05-23', '2024-05-28', '2024-05-30',
     '2024-06-04', '2024-06-07', '2024-06-09','2024-06-12', '2024-06-17', '2024-06-19','2024-06-22', '2024-06-24', '2024-06-27',
-    '2024-06-29', '2024-07-09', '2024-07-14','2024-07-17', '2024-07-19', '2024-07-22','2024-07-29', '2024-08-11', '2024-08-13',
-    '2024-08-16', '2024-08-21', '2024-08-23','2024-08-26', '2024-08-28', '2024-08-31','2024-09-02', '2024-09-05', '2024-09-07','2024-09-15',]
+    '2024-06-29', '2024-07-09', '2024-07-14','2024-07-17', '2024-07-19', '2024-07-22','2024-07-29', #'2024-08-11', '2024-08-13',
+    #'2024-08-16', '2024-08-21', '2024-08-23','2024-08-26', '2024-08-28', '2024-08-31','2024-09-02', '2024-09-05', '2024-09-07','2024-09-15',
+    ]
 
 
 def get_available_dates() -> list[str]:
@@ -60,7 +68,7 @@ def tif_path() -> str:
 
 TEMPORAL_REPEATS = len(DATES)      
 PATCH_GRID  = 14
-CHIP_SIZE     = 224
+CHIP_SIZE = 224
 
 
 MIN_CLUSTERS = 1
@@ -71,15 +79,15 @@ PATCH_MASK_THRESHOLD = 0.05
 INFRA_NDVI_THRESH  = -0.05
 
 
-SCL_INCLUDE_DARK_AREA       = True
+SCL_INCLUDE_DARK_AREA  = True
 SCL_USE_SPECTRAL_SUPPLEMENT = True
 
 
 MEANINGFUL_NDVI_SPREAD = 0.05
-MIN_VALID_PATCHES      = 10
-RANDOM_SEED            = 42
-PCA_COMPONENT          = 10
+MIN_VALID_PATCHES = 10
+RANDOM_SEED = 42
+PCA_COMPONENT = 10
 
-TEMPORAL_STAT_WEIGHT   = 2.5   
-DISPLAY_MIN_VALID_PCT  = 0.70  
-EMB_STAT_PCA_DIMS      = 16
+TEMPORAL_STAT_WEIGHT = 2.5   
+DISPLAY_MIN_VALID_PCT = 0.70  
+EMB_STAT_PCA_DIMS = 16

@@ -1,3 +1,12 @@
+"""
+QGIS Python console script.
+Extracts a 224x224 spectral chip, field mask, SCL chip, and metadata JSON
+for each selected field polygon x Sentinel-2 date. Run inside QGIS console.
+Edit PATCH_ID, BASE_PATH, OUTPUT_PATH before running. 
+
+"""
+
+
 from qgis.core import QgsProject, QgsCoordinateTransform, QgsCoordinateReferenceSystem
 import numpy as np
 from osgeo import gdal, ogr, osr
@@ -22,7 +31,7 @@ DATE_FOLDERS = [
     "2024-09-15",
 ]
 
-PATCH_ID    = '32UNA_3_4'
+PATCH_ID    = '32UNV_3_0'
 BASE_PATH   = r'Y:\14_Zuckerrübe\Sentinel_2\wue'
 OUTPUT_PATH = r'C:\Users\Sudipto\internship\EO\prithvi\greenspin\multi_crop_output'
 

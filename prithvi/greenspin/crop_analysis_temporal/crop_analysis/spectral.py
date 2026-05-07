@@ -1,6 +1,11 @@
 """
 spectral.py
 
+Spectral index computation (NDVI, NDWI, SAVI, NDRE), cloud-free temporal
+compositing (median of top-N greenest observations per pixel), display image
+generation, best-date selection, and per-pixel temporal NDVI statistics (7 features).
+
+
 """
 import numpy as np
 
@@ -150,16 +155,16 @@ def select_best_clear_date(
 
 def extract_temporal_ndvi_stats(
     chip_temporal: np.ndarray,
-    cloud_masks:   np.ndarray,
-    mask_224:      np.ndarray,
+    cloud_masks: np.ndarray,
+    mask_224: np.ndarray,
 ) -> np.ndarray:
     
     T, C, H, W = chip_temporal.shape
-    valid       = (cloud_masks == 0).astype(np.float32)    
+    valid = (cloud_masks == 0).astype(np.float32)    
 
     B4 = chip_temporal[:, 2, :, :].astype(np.float32)
     B8 = chip_temporal[:, 3, :, :].astype(np.float32)
-    ndvi_ts     = (B8 - B4) / (B8 + B4 + 1e-6)              
+    ndvi_ts = (B8 - B4) / (B8 + B4 + 1e-6)              
     ndvi_masked = np.where(valid, ndvi_ts, np.nan)
 
     with np.errstate(all='ignore'):
@@ -190,7 +195,7 @@ def extract_temporal_ndvi_stats(
     )   
 
     
-    out      = np.zeros((7, H, W), dtype=np.float32)
+    out  = np.zeros((7, H, W), dtype=np.float32)
     field_px = mask_224 == 1
     for s in range(7):
         plane = stats_raw[s]

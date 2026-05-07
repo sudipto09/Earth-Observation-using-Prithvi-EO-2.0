@@ -1,5 +1,10 @@
 """
 data_loader.py
+
+Loads pre-extracted .npy chips, SCL arrays, field masks, and metadata JSON
+from the FID_* output folders produced by qgis_chip_extractor.py.
+Missing dates are skipped silently; missing SCL files fall back to spectral masking.
+
 """
 import json
 import os

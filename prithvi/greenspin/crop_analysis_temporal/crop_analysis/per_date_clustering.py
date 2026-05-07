@@ -1,5 +1,10 @@
 """
 per_date_clustering.py
+
+Single-date spectral GMM clustering applied independently per acquisition date.
+Used as a temporal sanity check: compares per-date cluster counts against the
+temporal-stack result and writes a k-comparison timeline chart and grid summary.
+
 """
 from __future__ import annotations
 
