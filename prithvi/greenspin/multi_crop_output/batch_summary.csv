@@ -1,0 +1,59 @@
+field_id,label,segmented,n_phenotypes_effective,n_phenotypes_raw,ndvi_diff,silhouette,db_score,dominant_pct,fragmentation,avg_confidence,n_field_pixels,verdict
+22,multi-crop,True,3,3,0.4551,0.233,1.318,49.9,1.0,1.0,2750,3 distinct phenotypes | strong NDVI separation (spread 0.455) | likely distinct crop types or strong stress.
+325,multi-crop,True,3,3,0.4415,0.176,1.666,38.1,1.0,1.0,1112,3 distinct phenotypes | strong NDVI separation (spread 0.441) | likely distinct crop types or strong stress.
+207,multi-crop,True,3,3,0.4127,0.198,1.438,58.6,1.0,0.999,2313,3 distinct phenotypes | strong NDVI separation (spread 0.413) | likely distinct crop types or strong stress.
+150,multi-crop,True,3,3,0.4103,0.18,1.528,47.8,1.0,0.999,1925,3 distinct phenotypes | strong NDVI separation (spread 0.410) | likely distinct crop types or strong stress.
+18,multi-crop,True,3,3,0.4002,0.272,1.192,42.2,1.0,0.997,4383,3 distinct phenotypes | strong NDVI separation (spread 0.400) | likely distinct crop types or strong stress.
+243,multi-crop,True,3,3,0.3886,0.201,1.39,45.3,1.0,1.0,1959,3 distinct phenotypes | strong NDVI separation (spread 0.389) | likely distinct crop types or strong stress.
+210,multi-crop,True,3,3,0.3884,0.23,1.475,61.8,1.0,0.999,5838,3 distinct phenotypes | strong NDVI separation (spread 0.388) | likely distinct crop types or strong stress.
+149,multi-crop,True,3,3,0.3865,0.173,1.343,49.9,1.0,1.0,2690,3 distinct phenotypes | strong NDVI separation (spread 0.386) | likely distinct crop types or strong stress.
+97,multi-crop,True,3,3,0.3859,0.212,1.415,71.8,1.0,0.999,2298,3 distinct phenotypes | strong NDVI separation (spread 0.386) | likely distinct crop types or strong stress.
+244,multi-crop,True,4,4,0.3847,0.207,1.438,61.7,1.0,1.0,2414,4 distinct phenotypes | strong NDVI separation (spread 0.385) | likely distinct crop types or strong stress.
+123,multi-crop,True,3,3,0.3538,0.216,1.345,51.0,1.0,1.0,3834,3 distinct phenotypes | strong NDVI separation (spread 0.354) | likely distinct crop types or strong stress.
+135,multi-crop,True,3,3,0.3488,0.258,1.255,52.3,1.0,0.999,4553,3 distinct phenotypes | strong NDVI separation (spread 0.349) | likely distinct crop types or strong stress.
+29,multi-crop,True,3,3,0.336,0.362,1.261,35.8,1.0,1.0,3151,3 distinct phenotypes | strong NDVI separation (spread 0.336) | likely distinct crop types or strong stress.
+138,multi-crop,True,3,3,0.3335,0.217,1.465,50.1,1.0,1.0,2146,3 distinct phenotypes | strong NDVI separation (spread 0.333) | likely distinct crop types or strong stress.
+284,multi-crop,True,2,2,0.328,0.243,1.443,50.2,1.0,1.0,1615,2 distinct phenotypes | strong NDVI separation (spread 0.328) | likely distinct crop types or strong stress.
+5,multi-crop,True,3,3,0.324,0.223,1.368,56.6,1.0,1.0,3070,3 distinct phenotypes | strong NDVI separation (spread 0.324) | likely distinct crop types or strong stress.
+226,multi-crop,True,3,3,0.3202,0.258,1.251,46.8,1.0,1.0,3224,3 distinct phenotypes | strong NDVI separation (spread 0.320) | likely distinct crop types or strong stress.
+56,multi-crop,True,3,3,0.3193,0.211,1.245,84.6,1.0,0.999,2337,3 distinct phenotypes | strong NDVI separation (spread 0.319) | likely distinct crop types or strong stress.
+340,multi-crop,True,3,3,0.3155,0.229,1.317,38.2,1.0,0.998,3857,3 distinct phenotypes | strong NDVI separation (spread 0.316) | likely distinct crop types or strong stress.
+322,multi-crop,True,3,3,0.3093,0.236,1.194,51.7,1.0,1.0,2075,3 distinct phenotypes | strong NDVI separation (spread 0.309) | likely distinct crop types or strong stress.
+343,multi-crop,True,3,3,0.3052,0.219,1.308,59.7,1.0,1.0,1476,3 distinct phenotypes | strong NDVI separation (spread 0.305) | likely distinct crop types or strong stress.
+19,multi-crop,True,4,4,0.301,0.223,1.344,48.5,1.0,0.999,3172,4 distinct phenotypes | strong NDVI separation (spread 0.301) | likely distinct crop types or strong stress.
+134,multi-crop,True,3,3,0.2937,0.232,1.429,60.6,1.0,0.998,3041,3 distinct phenotypes | strong NDVI separation (spread 0.294) | likely distinct crop types or strong stress.
+1734,multi-crop,True,2,2,0.2883,0.149,1.414,51.4,1.0,1.0,1524,2 distinct phenotypes | strong NDVI separation (spread 0.288) | likely distinct crop types or strong stress.
+184,multi-crop,True,3,3,0.2856,0.216,1.337,46.6,1.0,1.0,2455,3 distinct phenotypes | strong NDVI separation (spread 0.286) | likely distinct crop types or strong stress.
+25,multi-crop,True,3,3,0.2825,0.271,1.154,52.7,1.0,0.999,3752,3 distinct phenotypes | strong NDVI separation (spread 0.283) | likely distinct crop types or strong stress.
+192,multi-crop,True,2,2,0.2741,0.223,1.298,63.9,1.0,0.999,2968,2 distinct phenotypes | strong NDVI separation (spread 0.274) | likely distinct crop types or strong stress.
+64,multi-crop,True,3,3,0.2712,0.164,1.303,59.8,1.0,1.0,1606,3 distinct phenotypes | strong NDVI separation (spread 0.271) | likely distinct crop types or strong stress.
+230,multi-crop,True,3,3,0.2402,0.193,1.511,59.2,1.0,0.999,2222,3 distinct phenotypes | strong NDVI separation (spread 0.240) | likely distinct crop types or strong stress.
+118,multi-crop,True,3,3,0.2346,0.239,1.327,63.1,1.0,1.0,2206,3 distinct phenotypes | strong NDVI separation (spread 0.235) | likely distinct crop types or strong stress.
+81,multi-crop,True,2,2,0.2278,0.226,1.296,73.7,1.0,1.0,1805,2 distinct phenotypes | strong NDVI separation (spread 0.228) | likely distinct crop types or strong stress.
+290,multi-crop,True,3,3,0.2254,0.179,1.475,64.1,1.0,1.0,1822,3 distinct phenotypes | strong NDVI separation (spread 0.225) | likely distinct crop types or strong stress.
+52,multi-crop,True,2,2,0.2156,0.244,1.221,65.0,1.0,0.999,2812,2 distinct phenotypes | strong NDVI separation (spread 0.216) | likely distinct crop types or strong stress.
+276,multi-crop,True,2,2,0.207,0.13,1.664,73.1,1.0,0.998,1142,2 distinct phenotypes | strong NDVI separation (spread 0.207) | likely distinct crop types or strong stress.
+35,multi-crop,True,2,2,0.1778,0.222,1.265,52.1,1.0,0.999,2506,2 distinct phenotypes | strong NDVI separation (spread 0.178) | likely distinct crop types or strong stress.
+347,multi-crop,True,2,2,0.1643,0.143,1.179,63.6,1.0,1.0,1443,2 distinct phenotypes | strong NDVI separation (spread 0.164) | likely distinct crop types or strong stress.
+33,multi-crop,True,2,2,0.1638,0.256,1.183,59.9,1.0,1.0,2918,2 distinct phenotypes | strong NDVI separation (spread 0.164) | likely distinct crop types or strong stress.
+144,multi-crop,True,2,2,0.1511,0.172,1.39,62.0,1.0,1.0,1366,2 distinct phenotypes | strong NDVI separation (spread 0.151) | likely distinct crop types or strong stress.
+337,intra-crop,True,2,2,0.1499,0.247,1.352,68.9,1.0,0.999,1479,2 phenotypes | moderate NDVI separation (spread 0.150) | possible mixed crop types or stress patches.
+31,intra-crop,True,2,2,0.1396,0.223,1.286,87.9,1.0,0.999,3306,2 phenotypes | moderate NDVI separation (spread 0.140) | possible mixed crop types or stress patches.
+107,intra-crop,True,3,3,0.1178,0.194,1.487,58.9,1.0,1.0,1925,"3 phenotypes | temporally-driven separation (NDVI spread 0.118, dominant class: sparse) | similar greenness but different seasonal trajectories."
+170,intra-crop,True,2,2,0.1163,0.203,1.282,66.9,1.0,1.0,2072,2 phenotypes | moderate NDVI separation (spread 0.116) | possible mixed crop types or stress patches.
+316,intra-crop,True,2,2,0.1148,0.2,1.381,59.0,1.0,1.0,1966,2 phenotypes | moderate NDVI separation (spread 0.115) | possible mixed crop types or stress patches.
+306,intra-crop,True,2,2,0.1096,0.179,1.084,81.8,1.0,1.0,1562,2 phenotypes | moderate NDVI separation (spread 0.110) | possible mixed crop types or stress patches.
+4,intra-crop,True,3,3,0.0,0.0,0.0,61.7,1.0,1.0,3364,TIF only
+6,intra-crop,True,2,2,0.0,0.0,0.0,65.9,1.0,1.0,3810,TIF only
+48,intra-crop,True,2,2,0.0,0.0,0.0,51.9,1.0,1.0,2663,TIF only
+57,intra-crop,True,2,2,0.0,0.0,0.0,59.9,1.0,1.0,2413,TIF only
+71,intra-crop,True,2,2,0.0,0.0,0.0,69.4,1.0,1.0,3444,TIF only
+72,intra-crop,True,2,2,0.0,0.0,0.0,56.4,1.0,1.0,3404,TIF only
+75,intra-crop,True,2,2,0.0,0.0,0.0,62.3,1.0,1.0,2965,TIF only
+98,intra-crop,True,2,2,0.0,0.0,0.0,94.1,1.0,1.0,1131,TIF only
+99,intra-crop,True,2,2,0.0,0.0,0.0,56.4,1.0,1.0,3281,TIF only
+85,homogeneous,False,1,1,0.0,0.0,0.0,100.0,1.0,1.0,2414,TIF only
+587,homogeneous,False,1,1,0.0,0.0,0.0,100.0,1.0,1.0,1759,TIF only
+969,homogeneous,False,1,1,0.0,0.0,0.0,100.0,1.0,0.999,1641,TIF only
+1883,homogeneous,False,1,1,0.0,0.0,0.0,100.0,1.0,1.0,2518,TIF only
+4261,homogeneous,False,1,1,0.0,0.0,0.0,100.0,1.0,1.0,2185,TIF only
