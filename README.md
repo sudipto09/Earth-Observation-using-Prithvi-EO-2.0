@@ -72,7 +72,7 @@ to identify **hidden patterns inside fields**, such as:
 
 ### Temporal Dashboard
 
-![Temporal Dashboard](prithvi/greenspin/multi_crop_output/FID_2701/prithvi_dashboard_v2_Temporal.png)
+![Temporal Dashboard](prithvi/greenspin/multi_crop_output/prithvi_dashboard_v2_Temporal.png)
 
 ### Dashboard shows:
 
@@ -91,7 +91,7 @@ to identify **hidden patterns inside fields**, such as:
 
 ### Per-Date Phenotype Grid
 
-![Per Date Dashboard](ADD_PATH_TO_FIELD_207_GRID_IMAGE)
+![Per Date Dashboard](prithvi/greenspin/multi_crop_output/per_date_zones_grid.png)
 
 This dashboard visualizes:
 
@@ -105,7 +105,7 @@ This dashboard visualizes:
 
 ### Batch Screening Summary
 
-![Batch Summary](ADD_PATH_TO_BATCH_SUMMARY_IMAGE)
+![Batch Summary](prithvi/greenspin/multi_crop_output/batch_summary_final.png)
 
 Batch analysis includes:
 
